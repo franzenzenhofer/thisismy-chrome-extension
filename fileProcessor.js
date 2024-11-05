@@ -1,6 +1,6 @@
 // fileProcessor.js
 
-import { processingIndicator, removeWhitespacesCheckbox, outputArea } from './uiElements.js';
+import { processingIndicator, outputArea } from './uiElements.js';
 import { showNotification } from './notifications.js';
 import { addLogEntry } from './logger.js';
 import { outputContents, updateOutputArea } from './main.js';
@@ -27,15 +27,14 @@ export const readFile = async (file) => {
     } else {
       return null;
     }
-  } else if (file.type.startsWith('text/')) {
+  } else {
+    // Attempt to read any other file type as text
     const textContent = await readTextFile(file);
     if (textContent !== null) {
       content = header + textContent + footer;
     } else {
       return null;
     }
-  } else {
-    return null; // Unsupported file type
   }
 
   return content;

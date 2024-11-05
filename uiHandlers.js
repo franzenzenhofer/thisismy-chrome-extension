@@ -20,6 +20,7 @@ import {
 import {
   selectedFiles,
   selectedURLs,
+  selectedSpecials,
   outputContents,
   updateOutputArea,
   addFile,
@@ -61,6 +62,10 @@ export const initializeEventListeners = () => {
     }
   });
 
+  removeWhitespacesCheckbox.addEventListener('change', () => {
+    updateOutputArea();
+  });
+
   copyBtn.addEventListener('click', () => {
     const output = outputArea.textContent;
     if (!output) {
@@ -92,7 +97,8 @@ export const initializeEventListeners = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'output.txt';
+    const filename = `${getFormattedDateTime()}-thisismy-briefing.txt`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
     showNotification('Output saved successfully!', 'success');
@@ -130,6 +136,7 @@ export const initializeEventListeners = () => {
     getSelectedContent();
   });
 };
+
 
 const handleDrop = (event) => {
   const items = event.dataTransfer.items;
@@ -191,14 +198,11 @@ function getCurrentPageContent() {
               const fullContent = header + content + footer;
               const key = `page:${url}`;
               outputContents.set(key, fullContent);
+              selectedSpecials.set(key, { name: `Current Page Content from ${url}`, icon: '📰' });
+              updateSelectionDisplay();
               updateOutputArea();
               showNotification('Got current page content.', 'success');
               addLogEntry(`Got current page content from ${url}`, 'success');
-              // Optionally, add it to the selection display
-              if (!selectedURLs.has(url)) {
-                selectedURLs.set(url, url);
-                updateSelectionDisplay();
-              }
             }
           }
         );
@@ -236,14 +240,11 @@ function getSelectedContent() {
             const fullContent = header + content + footer;
             const key = `selection:${url}`;
             outputContents.set(key, fullContent);
+            selectedSpecials.set(key, { name: `Selected Content from ${url}`, icon: '✂️' });
+            updateSelectionDisplay();
             updateOutputArea();
             showNotification('Got selected content.', 'success');
             addLogEntry(`Got selected content from ${url}`, 'success');
-            // Optionally, add it to the selection display
-            if (!selectedURLs.has(url)) {
-              selectedURLs.set(url, url);
-              updateSelectionDisplay();
-            }
           } else {
             showNotification('No content selected.', 'info');
             addLogEntry('No content selected.', 'info');
@@ -252,4 +253,15 @@ function getSelectedContent() {
       }
     );
   });
+}
+
+function getFormattedDateTime() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth()+1).padStart(2,'0');
+  const day = String(now.getDate()).padStart(2,'0');
+  const hour = String(now.getHours()).padStart(2,'0');
+  const minute = String(now.getMinutes()).padStart(2,'0');
+  const second = String(now.getSeconds()).padStart(2,'0');
+  return `${year}-${month}-${day}-${hour}-${minute}-${second}`;
 }

@@ -14,7 +14,6 @@ import {
   urlInput,
   selectionDisplay,
   addUrlBtn,
-  removeWhitespacesCheckbox,
   copyBtn,
   saveBtn,
   processingIndicator,
@@ -22,40 +21,26 @@ import {
   getCurrentUrlBtn,
   getCurrentPageContentBtn,
   getSelectedContentBtn,
+  removeWhitespacesCheckbox,
 } from './uiElements.js';
 
 export const selectedFiles = new Map();
 export const selectedURLs = new Map();
+export const selectedSpecials = new Map();
 export const outputContents = new Map();
 
 initializeEventListeners();
 
 export const addFile = (file) => {
-  if (selectedFiles.has(file.name)) {
-    selectedFiles.set(file.name, file);
-    showNotification(`File "${file.name}" updated.`, 'info');
-    addLogEntry(`File "${file.name}" updated.`, 'info');
-  } else {
-    selectedFiles.set(file.name, file);
-    showNotification(`File "${file.name}" added.`, 'success');
-    addLogEntry(`File "${file.name}" added.`, 'success');
-  }
+  showNotification(`Processing file: ${file.name}`, 'info');
+  addLogEntry(`Processing file: ${file.name}`, 'info');
   processFile(file);
-  updateSelectionDisplay();
 };
 
 export const addURL = (url) => {
-  if (selectedURLs.has(url)) {
-    selectedURLs.set(url, url);
-    showNotification(`URL "${url}" updated.`, 'info');
-    addLogEntry(`URL "${url}" updated.`, 'info');
-  } else {
-    selectedURLs.set(url, url);
-    showNotification(`URL "${url}" added.`, 'success');
-    addLogEntry(`URL "${url}" added.`, 'success');
-  }
+  showNotification(`Processing URL: ${url}`, 'info');
+  addLogEntry(`Processing URL: ${url}`, 'info');
   processURL(url);
-  updateSelectionDisplay();
 };
 
 export const updateSelectionDisplay = () => {
@@ -68,7 +53,7 @@ export const updateSelectionDisplay = () => {
     span.innerHTML = `<span class="icon">${fileIcon}</span> ${fileName}`;
     div.appendChild(span);
     const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = 'Remove';
+    deleteBtn.textContent = '🗑️';
     deleteBtn.classList.add('delete-btn');
     deleteBtn.addEventListener('click', () => {
       selectedFiles.delete(fileName);
@@ -87,8 +72,18 @@ export const updateSelectionDisplay = () => {
     const span = document.createElement('span');
     span.innerHTML = `<span class="icon">🔗</span> ${url}`;
     div.appendChild(span);
+
+    // Add refresh button
+    const refreshBtn = document.createElement('button');
+    refreshBtn.textContent = '🔄';
+    refreshBtn.classList.add('refresh-btn');
+    refreshBtn.addEventListener('click', () => {
+      processURL(url);
+    });
+    div.appendChild(refreshBtn);
+
     const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = 'Remove';
+    deleteBtn.textContent = '🗑️';
     deleteBtn.classList.add('delete-btn');
     deleteBtn.addEventListener('click', () => {
       selectedURLs.delete(url);
@@ -101,7 +96,29 @@ export const updateSelectionDisplay = () => {
     div.appendChild(deleteBtn);
     selectionDisplay.appendChild(div);
   });
-  if (selectedFiles.size + selectedURLs.size > 1) {
+
+  selectedSpecials.forEach((item, key) => {
+    const div = document.createElement('div');
+    div.classList.add('selection-item');
+    const span = document.createElement('span');
+    span.innerHTML = `<span class="icon">${item.icon}</span> ${item.name}`;
+    div.appendChild(span);
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = '🗑️';
+    deleteBtn.classList.add('delete-btn');
+    deleteBtn.addEventListener('click', () => {
+      selectedSpecials.delete(key);
+      outputContents.delete(key);
+      updateOutputArea();
+      showNotification(`"${item.name}" removed.`, 'info');
+      addLogEntry(`"${item.name}" removed.`, 'info');
+      updateSelectionDisplay();
+    });
+    div.appendChild(deleteBtn);
+    selectionDisplay.appendChild(div);
+  });
+
+  if (selectedFiles.size + selectedURLs.size + selectedSpecials.size > 1) {
     const div = document.createElement('div');
     div.classList.add('selection-item');
     const removeAllBtn = document.createElement('button');
@@ -110,6 +127,7 @@ export const updateSelectionDisplay = () => {
     removeAllBtn.addEventListener('click', () => {
       selectedFiles.clear();
       selectedURLs.clear();
+      selectedSpecials.clear();
       outputContents.clear();
       updateOutputArea();
       showNotification('All items removed.', 'info');
@@ -141,6 +159,8 @@ const processFile = async (file) => {
     const content = await readFile(file);
     if (content !== null) {
       outputContents.set(file.name, content);
+      selectedFiles.set(file.name, file);
+      updateSelectionDisplay();
       updateOutputArea();
       showNotification(`Processed file: ${file.name}`, 'success');
       addLogEntry(`Processed file: ${file.name}`, 'success');
@@ -164,6 +184,8 @@ const processURL = async (url) => {
     const content = await fetchURLContent(url);
     if (content !== null) {
       outputContents.set(url, content);
+      selectedURLs.set(url, url);
+      updateSelectionDisplay();
       updateOutputArea();
       showNotification(`Fetched content from URL: ${url}`, 'success');
       addLogEntry(`Fetched content from URL: ${url}`, 'success');
@@ -186,7 +208,7 @@ export const updateOutputArea = () => {
     finalOutput += content + '\n';
   });
   if (removeWhitespacesCheckbox.checked) {
-    finalOutput = finalOutput.replace(/\s+/g, ' ').trim();
+    finalOutput = finalOutput.replace(/[\s\n]+/g, ' ').trim();
   }
   outputArea.textContent = finalOutput;
 };
