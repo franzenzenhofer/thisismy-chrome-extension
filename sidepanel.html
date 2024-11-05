@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>thisismy by Franz Enzenhofer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+
+    <!-- Notification Area -->
+    <div id="notification" class="notification"></div>
+
+    <!-- URL Input Field -->
+    <div class="url-input-container">
+      <input type="text" id="url-input" placeholder="Enter URL">
+      <button id="add-url-btn">Add URL</button>
+    </div>
+
+    <!-- Unified Drag and Drop Area -->
+    <div id="dropzone" class="dropzone">
+      <p>📁🔗 Drag & Drop Files or URLs Here or <span class="select-link">Click to Select Files</span></p>
+    </div>
+
+    <!-- Selection Display -->
+    <div id="selection-display" class="selection-display"></div>
+
+    <!-- Process Button and Options -->
+    <div class="process-btn-container">
+      <button id="process-btn" class="primary-btn">Process All</button>
+      <label class="action-label"><input type="checkbox" id="remove-whitespaces"> Remove Whitespaces</label>
+    </div>
+
+    <!-- Processing Indicator -->
+    <div id="processing-indicator" class="processing-indicator"></div>
+
+    <!-- Output Section -->
+    <div id="output-section">
+      <pre id="output" class="output"></pre>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions">
+      <button id="copy-output" class="action-btn">Copy to Clipboard</button>
+      <button id="save-output" class="action-btn">Save</button>
+    </div>
+  </div>
+
+  <!-- Include necessary libraries -->
+  <script src="libs/pdf.js"></script>
+  <script src="libs/mammoth.browser.min.js"></script>
+  <script src="libs/Readability.js"></script>
+
+  <!-- Main Script -->
+  <script src="sidepanel.js"></script>
+</body>
+</html>
