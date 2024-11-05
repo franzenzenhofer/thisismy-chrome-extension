@@ -11,6 +11,13 @@
     <!-- Notification Area -->
     <div id="notification" class="notification"></div>
 
+    <!-- Top Controls -->
+    <div class="top-controls">
+      <button id="get-current-url-btn" class="primary-btn">Get Current URL</button>
+      <button id="get-current-page-content-btn" class="primary-btn">Get Current Page Content</button>
+      <button id="get-selected-content-btn" class="primary-btn">Get Selected Content</button>
+    </div>
+
     <!-- URL Input Field -->
     <div class="url-input-container">
       <input type="text" id="url-input" placeholder="Enter URL">
@@ -25,12 +32,6 @@
     <!-- Selection Display -->
     <div id="selection-display" class="selection-display"></div>
 
-    <!-- Process Button and Options -->
-    <div class="process-btn-container">
-      <button id="process-btn" class="primary-btn">Process All</button>
-      <label class="action-label"><input type="checkbox" id="remove-whitespaces"> Remove Whitespaces</label>
-    </div>
-
     <!-- Processing Indicator -->
     <div id="processing-indicator" class="processing-indicator"></div>
 
@@ -41,8 +42,15 @@
 
     <!-- Action Buttons -->
     <div class="actions">
+      <label class="action-label"><input type="checkbox" id="remove-whitespaces"> Remove Extra Spaces</label>
       <button id="copy-output" class="action-btn">Copy to Clipboard</button>
       <button id="save-output" class="action-btn">Save</button>
+    </div>
+
+    <!-- Collapsible Log Area -->
+    <div id="log-container" class="log-container">
+      <button id="toggle-log-btn" class="log-toggle-btn">Show Log</button>
+      <div id="log-content" class="log-content"></div>
     </div>
   </div>
 

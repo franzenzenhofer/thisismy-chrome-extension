@@ -12,22 +12,45 @@ const showNotification = (message, type = 'info') => {
   }, 5000);
 };
 
+// Logging System
+const logContainer = document.getElementById('log-container');
+const logContent = document.getElementById('log-content');
+const toggleLogBtn = document.getElementById('toggle-log-btn');
+
+let isLogVisible = false;
+
+toggleLogBtn.addEventListener('click', () => {
+  isLogVisible = !isLogVisible;
+  logContent.style.display = isLogVisible ? 'block' : 'none';
+  toggleLogBtn.textContent = isLogVisible ? 'Hide Log' : 'Show Log';
+});
+
+const addLogEntry = (message, type = 'info') => {
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type}`;
+  const timestamp = new Date().toLocaleTimeString();
+  entry.innerHTML = `<time>[${timestamp}]</time> ${message}`;
+  logContent.appendChild(entry);
+  logContent.scrollTop = logContent.scrollHeight;
+};
+
 // DOM Elements
 const dropzone = document.getElementById('dropzone');
 const outputArea = document.getElementById('output');
 const urlInput = document.getElementById('url-input');
 const selectionDisplay = document.getElementById('selection-display');
 const addUrlBtn = document.getElementById('add-url-btn');
-const processBtn = document.getElementById('process-btn');
 const removeWhitespacesCheckbox = document.getElementById('remove-whitespaces');
 const copyBtn = document.getElementById('copy-output');
 const saveBtn = document.getElementById('save-output');
 const processingIndicator = document.getElementById('processing-indicator');
 const selectLink = document.querySelector('.select-link');
+const getCurrentUrlBtn = document.getElementById('get-current-url-btn');
 
 // Data Structures
 let selectedFiles = new Map();
 let selectedURLs = new Map();
+let outputContents = new Map();
 
 // Utility Functions
 const isValidURL = (string) => {
@@ -81,10 +104,6 @@ urlInput.addEventListener('keyup', (event) => {
   if (event.key === 'Enter') {
     addUrlBtn.click();
   }
-});
-
-processBtn.addEventListener('click', () => {
-  processFilesAndURLs();
 });
 
 copyBtn.addEventListener('click', () => {
@@ -143,6 +162,17 @@ selectLink.addEventListener('click', () => {
   });
 });
 
+getCurrentUrlBtn.addEventListener('click', () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const url = tabs[0].url;
+    if (isValidURL(url)) {
+      addURL(url);
+    } else {
+      showNotification('Failed to get the current URL.', 'error');
+    }
+  });
+});
+
 // Functions
 const handleDrop = (event) => {
   const items = event.dataTransfer.items;
@@ -167,9 +197,13 @@ const addFile = (file) => {
   if (selectedFiles.has(file.name)) {
     selectedFiles.set(file.name, file);
     showNotification(`File "${file.name}" updated.`, 'info');
+    addLogEntry(`File "${file.name}" updated.`, 'info');
   } else {
     selectedFiles.set(file.name, file);
+    showNotification(`File "${file.name}" added.`, 'success');
+    addLogEntry(`File "${file.name}" added.`, 'success');
   }
+  processFile(file);
   updateSelectionDisplay();
 };
 
@@ -177,9 +211,13 @@ const addURL = (url) => {
   if (selectedURLs.has(url)) {
     selectedURLs.set(url, url);
     showNotification(`URL "${url}" updated.`, 'info');
+    addLogEntry(`URL "${url}" updated.`, 'info');
   } else {
     selectedURLs.set(url, url);
+    showNotification(`URL "${url}" added.`, 'success');
+    addLogEntry(`URL "${url}" added.`, 'success');
   }
+  processURL(url);
   updateSelectionDisplay();
 };
 
@@ -191,7 +229,8 @@ const updateSelectionDisplay = () => {
     div.classList.add('selection-item');
 
     const span = document.createElement('span');
-    span.innerHTML = `<img src="icons/file-icon.png" alt="File Icon"> ${fileName}`;
+    const fileIcon = getFileIcon(file);
+    span.innerHTML = `<span class="icon">${fileIcon}</span> ${fileName}`;
     div.appendChild(span);
 
     const deleteBtn = document.createElement('button');
@@ -199,6 +238,10 @@ const updateSelectionDisplay = () => {
     deleteBtn.classList.add('delete-btn');
     deleteBtn.addEventListener('click', () => {
       selectedFiles.delete(fileName);
+      outputContents.delete(fileName);
+      updateOutputArea();
+      showNotification(`File "${fileName}" removed.`, 'info');
+      addLogEntry(`File "${fileName}" removed.`, 'info');
       updateSelectionDisplay();
     });
 
@@ -211,7 +254,7 @@ const updateSelectionDisplay = () => {
     div.classList.add('selection-item');
 
     const span = document.createElement('span');
-    span.innerHTML = `<img src="icons/url-icon.png" alt="URL Icon"> ${url}`;
+    span.innerHTML = `<span class="icon">🔗</span> ${url}`;
     div.appendChild(span);
 
     const deleteBtn = document.createElement('button');
@@ -219,6 +262,10 @@ const updateSelectionDisplay = () => {
     deleteBtn.classList.add('delete-btn');
     deleteBtn.addEventListener('click', () => {
       selectedURLs.delete(url);
+      outputContents.delete(url);
+      updateOutputArea();
+      showNotification(`URL "${url}" removed.`, 'info');
+      addLogEntry(`URL "${url}" removed.`, 'info');
       updateSelectionDisplay();
     });
 
@@ -236,6 +283,10 @@ const updateSelectionDisplay = () => {
     removeAllBtn.addEventListener('click', () => {
       selectedFiles.clear();
       selectedURLs.clear();
+      outputContents.clear();
+      updateOutputArea();
+      showNotification('All items removed.', 'info');
+      addLogEntry('All items removed.', 'info');
       updateSelectionDisplay();
     });
 
@@ -244,59 +295,78 @@ const updateSelectionDisplay = () => {
   }
 };
 
-const processFilesAndURLs = async () => {
-  if (selectedFiles.size === 0 && selectedURLs.size === 0) {
-    processingIndicator.style.display = 'none';
-    outputArea.textContent = '';
-    return;
+const getFileIcon = (file) => {
+  const type = file.type;
+  if (type.includes('pdf')) {
+    return '📄';
+  } else if (type.includes('wordprocessingml')) {
+    return '📄';
+  } else if (type.includes('text')) {
+    return '📄';
+  } else {
+    return '❓';
   }
+};
 
-  const options = {
-    removeWhitespaces: removeWhitespacesCheckbox.checked,
-  };
-
-  processingIndicator.textContent = 'Processing...';
+const processFile = async (file) => {
+  processingIndicator.textContent = `Processing "${file.name}"...`;
   processingIndicator.style.display = 'block';
 
   try {
-    let outputArr = [];
-
-    // Process Files
-    for (const [fileName, file] of selectedFiles.entries()) {
-      const content = await readFile(file);
-      if (content !== null) {
-        outputArr.push(content);
-      } else {
-        showNotification(`Failed to read file: ${fileName}`, 'error');
-      }
+    const content = await readFile(file);
+    if (content !== null) {
+      outputContents.set(file.name, content);
+      updateOutputArea();
+      showNotification(`Processed file: ${file.name}`, 'success');
+      addLogEntry(`Processed file: ${file.name}`, 'success');
+    } else {
+      showNotification(`Unsupported file type: ${file.name}`, 'error');
+      addLogEntry(`Unsupported file type: ${file.name}`, 'error');
     }
-
-    // Process URLs
-    for (const [url] of selectedURLs.entries()) {
-      const content = await fetchURLContent(url);
-      if (content !== null) {
-        outputArr.push(content);
-      } else {
-        showNotification(`Failed to fetch URL: ${url}`, 'error');
-      }
-    }
-
-    let finalOutput = outputArr.join('\n');
-
-    if (options.removeWhitespaces && finalOutput) {
-      finalOutput = finalOutput.replace(/\s+/g, ' ').trim();
-    }
-
-    outputArea.textContent = finalOutput;
-
-    processingIndicator.style.display = 'none';
-
-    showNotification('Processing complete!', 'success');
   } catch (error) {
     console.error(error);
-    showNotification('An error occurred during processing.', 'error');
+    showNotification(`Error processing file: ${file.name}`, 'error');
+    addLogEntry(`Error processing file: ${file.name}`, 'error');
+  } finally {
     processingIndicator.style.display = 'none';
   }
+};
+
+const processURL = async (url) => {
+  processingIndicator.textContent = `Fetching "${url}"...`;
+  processingIndicator.style.display = 'block';
+
+  try {
+    const content = await fetchURLContent(url);
+    if (content !== null) {
+      outputContents.set(url, content);
+      updateOutputArea();
+      showNotification(`Fetched content from URL: ${url}`, 'success');
+      addLogEntry(`Fetched content from URL: ${url}`, 'success');
+    } else {
+      showNotification(`Failed to fetch URL: ${url}`, 'error');
+      addLogEntry(`Failed to fetch URL: ${url}`, 'error');
+    }
+  } catch (error) {
+    console.error(error);
+    showNotification(`Error fetching URL: ${url}`, 'error');
+    addLogEntry(`Error fetching URL: ${url}`, 'error');
+  } finally {
+    processingIndicator.style.display = 'none';
+  }
+};
+
+const updateOutputArea = () => {
+  let finalOutput = '';
+  outputContents.forEach((content) => {
+    finalOutput += content + '\n';
+  });
+
+  if (removeWhitespacesCheckbox.checked) {
+    finalOutput = finalOutput.replace(/\s+/g, ' ').trim();
+  }
+
+  outputArea.textContent = finalOutput;
 };
 
 const readFile = async (file) => {
@@ -321,13 +391,15 @@ const readFile = async (file) => {
     } else {
       return null;
     }
-  } else {
+  } else if (file.type.startsWith('text/')) {
     const textContent = await readTextFile(file);
     if (textContent !== null) {
       content = header + textContent + footer;
     } else {
       return null;
     }
+  } else {
+    return null; // Unsupported file type
   }
 
   return content;
@@ -384,7 +456,12 @@ const fetchURLContent = async (url) => {
   try {
     const response = await fetch(url);
     const html = await response.text();
-    return parseHTMLContent(html, url);
+    const content = parseHTMLContent(html, url);
+    if (content !== null) {
+      return content;
+    } else {
+      throw new Error('Failed to parse content');
+    }
   } catch (error) {
     console.warn('Fetch failed, trying alternative method:', error);
     return fetchURLContentAlternative(url);
@@ -407,7 +484,7 @@ const parseHTMLContent = (html, url) => {
 
 const fetchURLContentAlternative = async (url) => {
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type: "FETCH_URL_CONTENT", url }, (response) => {
+    chrome.runtime.sendMessage({ type: "FETCH_URL_CONTENT_TAB", url }, (response) => {
       if (response && response.content) {
         const header = `Content from ${url}\n\n`;
         const footer = `\n\nEnd of content from ${url}`;
@@ -419,8 +496,113 @@ const fetchURLContentAlternative = async (url) => {
   });
 };
 
-// Debounce the processing function to prevent rapid calls
-const processFilesAndURLsDebounced = debounce(processFilesAndURLs, 500);
+// New DOM Elements
+const getCurrentPageContentBtn = document.getElementById('get-current-page-content-btn');
+const getSelectedContentBtn = document.getElementById('get-selected-content-btn');
+
+// Event Listeners for New Buttons
+getCurrentPageContentBtn.addEventListener('click', () => {
+  getCurrentPageContent();
+});
+
+getSelectedContentBtn.addEventListener('click', () => {
+  getSelectedContent();
+});
+
+// Function to Get Current Page Content
+function getCurrentPageContent() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const tabId = tabs[0].id;
+    chrome.scripting.executeScript(
+      {
+        target: { tabId: tabId },
+        files: ['libs/Readability.js']
+      },
+      () => {
+        chrome.scripting.executeScript(
+          {
+            target: { tabId: tabId },
+            func: () => {
+              const article = new Readability(document).parse();
+              return article ? article.textContent : document.body.innerText;
+            },
+            world: 'MAIN'
+          },
+          (results) => {
+            if (chrome.runtime.lastError || !results || !results[0].result) {
+              showNotification('Failed to get page content.', 'error');
+              addLogEntry('Failed to get current page content.', 'error');
+            } else {
+              const content = results[0].result;
+              const url = tabs[0].url;
+              const header = `Content from ${url}\n\n`;
+              const footer = `\n\nEnd of content from ${url}`;
+              const fullContent = header + content + footer;
+
+              const key = `page:${url}`;
+              outputContents.set(key, fullContent);
+              updateOutputArea();
+              showNotification('Got current page content.', 'success');
+              addLogEntry(`Got current page content from ${url}`, 'success');
+
+              // Optionally, add it to the selection display
+              if (!selectedURLs.has(url)) {
+                selectedURLs.set(url, url);
+                updateSelectionDisplay();
+              }
+            }
+          }
+        );
+      }
+    );
+  });
+}
+
+// Function to Get Selected Content
+function getSelectedContent() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const tabId = tabs[0].id;
+    chrome.scripting.executeScript(
+      {
+        target: { tabId: tabId },
+        func: () => {
+          const selection = window.getSelection();
+          return selection ? selection.toString() : '';
+        },
+        world: 'MAIN'
+      },
+      (results) => {
+        if (chrome.runtime.lastError || !results || !results[0].result) {
+          showNotification('Failed to get selected content.', 'error');
+          addLogEntry('Failed to get selected content.', 'error');
+        } else {
+          const content = results[0].result.trim();
+          if (content) {
+            const url = tabs[0].url;
+            const header = `Selected content from ${url}\n\n`;
+            const footer = `\n\nEnd of selected content from ${url}`;
+            const fullContent = header + content + footer;
+
+            const key = `selection:${url}`;
+            outputContents.set(key, fullContent);
+            updateOutputArea();
+            showNotification('Got selected content.', 'success');
+            addLogEntry(`Got selected content from ${url}`, 'success');
+
+            // Optionally, add it to the selection display
+            if (!selectedURLs.has(url)) {
+              selectedURLs.set(url, url);
+              updateSelectionDisplay();
+            }
+          } else {
+            showNotification('No content selected.', 'info');
+            addLogEntry('No content selected.', 'info');
+          }
+        }
+      }
+    );
+  });
+}
 
 // Update selection display initially
 updateSelectionDisplay();
