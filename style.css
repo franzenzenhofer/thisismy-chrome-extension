@@ -61,6 +61,10 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 5px 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .selection-item .icon {
@@ -144,4 +148,5 @@ hr {
 
 .top-controls a {
   margin-right: 5px;
+  margin-bottom: 5px;
 }
