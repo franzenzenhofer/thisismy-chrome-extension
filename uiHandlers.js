@@ -1,4 +1,3 @@
-// uiHandlers.js
 import { showNotification } from './notifications.js';
 import { addLogEntry } from './logger.js';
 import { isValidURL, parseGitignore, matchGitignore } from './utils.js';
@@ -20,11 +19,13 @@ import {
 import {
   selectedFiles,
   selectedURLs,
+  selectedNotes,
   selectedSpecials,
   outputContents,
   updateOutputArea,
   addFile,
   addURL,
+  addNote,
   updateSelectionDisplay,
 } from './main.js';
 
@@ -56,12 +57,18 @@ export const initializeEventListeners = () => {
   });
 
   addUrlBtn.addEventListener('click', () => {
-    const url = urlInput.value.trim();
-    if (isValidURL(url)) {
-      addURL(url);
+    const inputText = urlInput.value.trim();
+    if (inputText) {
+      if (isValidURL(inputText)) {
+        addURL(inputText);
+        addLogEntry(`Added URL: ${inputText}`, 'info');
+      } else {
+        addNote(inputText);
+        addLogEntry(`Added Note: ${inputText}`, 'info');
+      }
       urlInput.value = '';
     } else {
-      showNotification('Please enter a valid URL.', 'error');
+      showNotification('Please enter a URL or Note.', 'error');
     }
   });
 

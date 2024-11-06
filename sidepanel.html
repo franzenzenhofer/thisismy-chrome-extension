@@ -26,10 +26,10 @@
     <!-- URL Input Field -->
     <div class="row valign-wrapper">
       <div class="input-field col s9">
-        <input type="text" id="url-input" placeholder="Enter URL">
+        <input type="text" id="url-input" placeholder="Enter URL or Note">
       </div>
       <div class="col s3">
-        <a id="add-url-btn" class="btn waves-effect waves-light">Add URL</a>
+        <a id="add-url-btn" class="btn waves-effect waves-light">Add</a>
       </div>
     </div>
 
@@ -77,15 +77,10 @@
 
   <!-- Libraries -->
   <script src="libs/pdf.js"></script>
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'libs/pdf.worker.js';
-  </script>
+
   <script src="libs/mammoth.browser.min.js"></script>
   <script src="libs/Readability.js"></script>
- <!-- <script src="libs/materialize.min.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', M.AutoInit);
-  </script> -->
+
   <!-- Main Script -->
   <script type="module" src="main.js"></script>
 </body>

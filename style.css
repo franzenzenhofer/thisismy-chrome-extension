@@ -76,7 +76,7 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 16px;
 }
 
 .separator {
@@ -144,5 +144,4 @@ hr {
 
 .top-controls a {
   margin-right: 5px;
-  margin-bottom: 10px; /* Add vertical space between buttons */
 }
