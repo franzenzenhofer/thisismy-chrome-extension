@@ -331,19 +331,43 @@ export const updateOutputArea = () => {
 // Initialize selection display
 updateSelectionDisplay();
 
-// Add the message listener to handle messages from the background script
+
+// Message listener to handle messages from the background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "UPDATE_OUTPUT") {
-    const { title, content } = message;
-    const key = `message:${Date.now()}`; // Generate a unique key
+  if (message.type === "ADD_SELECTED_CONTENT") {
+    const { content, url } = message;
+    const title = `Selected content from ${url}`;
+    const key = `selection:${Date.now()}`;
     outputContents.set(key, content);
-    selectedSpecials.set(key, { name: title, icon: '🔔' });
+    selectedSpecials.set(key, { name: title, icon: '✂️' });
     updateSelectionDisplay();
     updateOutputArea();
-    showNotification(`Received content: ${title}`, 'success');
-    addLogEntry(`Received content: ${title}`, 'success');
+    showNotification(`Received selected content from ${url}`, 'success');
+    addLogEntry(`Received selected content from ${url}`, 'success');
     sendResponse({ success: true });
   }
   // Handle other message types if needed
+});
+
+// On side panel load, check for stored selected content
+document.addEventListener('DOMContentLoaded', () => {
+  chrome.storage.local.get('selectedContent', (data) => {
+    if (data.selectedContent) {
+      const { content, url } = data.selectedContent;
+      const title = `Selected content from ${url}`;
+      const key = `selection:${Date.now()}`;
+      outputContents.set(key, content);
+      selectedSpecials.set(key, { name: title, icon: '✂️' });
+      updateSelectionDisplay();
+      updateOutputArea();
+      showNotification(`Received selected content from ${url}`, 'success');
+      addLogEntry(`Received selected content from ${url}`, 'success');
+
+      // Remove the stored content
+      chrome.storage.local.remove('selectedContent', () => {
+        console.log("Selected content removed from chrome.storage.local");
+      });
+    }
+  });
 });
 

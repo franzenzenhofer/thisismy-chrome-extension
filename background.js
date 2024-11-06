@@ -1,6 +1,6 @@
 // background.js
 
-// Message listener for FETCH_URL_CONTENT_TAB
+// Message listener for FETCH_URL_CONTENT_TAB (unchanged)
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   if (request.type === "FETCH_URL_CONTENT_TAB") {
     try {
@@ -63,91 +63,42 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 
 // Set Side Panel Behavior on Extension Installation
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
-    .catch((error) => console.error("Error setting panel behavior:", error));
-});
-
-
-// Set Side Panel Behavior on Extension Installation
-chrome.runtime.onInstalled.addListener(() => {
-// Create context menu items
-chrome.contextMenus.create({
+  // Create context menu item for "Get Selected Content"
+  chrome.contextMenus.create({
     id: "thisismy-get-selected-content",
     title: "thisismy: get Selected Content",
     contexts: ["selection"]
-});
+  });
 
-chrome.contextMenus.create({
-    id: "thisismy-get-page-content",
-    title: "thisismy: get Page Content",
-    contexts: ["page"]
-});
-
-chrome.contextMenus.create({
-    id: "thisismy-get-current-url",
-    title: "thisismy: get Current URL",
-    contexts: ["page"]
-});
-
-chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+  // Set side panel behavior
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
     .catch((error) => console.error("Error setting panel behavior:", error));
 });
 
 // Handle context menu clicks
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-if (info.menuItemId === "thisismy-get-selected-content") {
-    chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: () => window.getSelection().toString()
-    }, (results) => {
-        const selectedText = results[0].result.trim();
-        if (selectedText) {
-            chrome.runtime.sendMessage({ type: "ADD_SELECTED_CONTENT", content: selectedText, url: tab.url });
-        } else {
-            console.warn("No content selected.");
-        }
-    });
-} else if (info.menuItemId === "thisismy-get-page-content") {
-    chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ["libs/Readability.js"]
-    }, () => {
-        chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: () => {
-                const article = new Readability(document).parse();
-                return article && article.textContent ? article.textContent : document.body.innerText;
-            }
-        }, (results) => {
-            const pageContent = results[0].result.trim();
-            chrome.runtime.sendMessage({ type: "ADD_PAGE_CONTENT", content: pageContent, url: tab.url });
+  if (info.menuItemId === "thisismy-get-selected-content") {
+    console.log("Context menu item clicked: get selected content");
+
+    // Use info.selectionText to get the selected text synchronously
+    const selectedText = info.selectionText ? info.selectionText.trim() : '';
+    if (selectedText) {
+      console.log("Selected text:", selectedText);
+
+      // Store the selected content in chrome.storage.local
+      chrome.storage.local.set({ selectedContent: { content: selectedText, url: tab.url } }, () => {
+        console.log("Selected content stored in chrome.storage.local");
+
+        // Send message to the side panel
+        chrome.runtime.sendMessage({ type: "ADD_SELECTED_CONTENT", content: selectedText, url: tab.url }, () => {
+          console.log("Message sent to side panel");
+
+          // Open the side panel
+          chrome.sidePanel.open({}).catch((error) => console.error("Error opening side panel:", error));
         });
-    });
-} else if (info.menuItemId === "thisismy-get-current-url") {
-    chrome.runtime.sendMessage({ type: "ADD_CURRENT_URL", url: tab.url });
-}
+      });
+    } else {
+      console.warn("No content selected.");
+    }
+  }
 });
-
-// Listener to handle content messages from context menu actions
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-switch (message.type) {
-    case "ADD_SELECTED_CONTENT":
-        addContentToPanel(`Selected content from ${message.url}`, message.content);
-        sendResponse({ success: true });
-        break;
-    case "ADD_PAGE_CONTENT":
-        addContentToPanel(`Page content from ${message.url}`, message.content);
-        sendResponse({ success: true });
-        break;
-    case "ADD_CURRENT_URL":
-        addContentToPanel(`URL from ${message.url}`, message.url);
-        sendResponse({ success: true });
-        break;
-}
-});
-
-// Function to add content to the panel and update output
-function addContentToPanel(title, content) {
-// Send message to the side panel
-chrome.runtime.sendMessage({ type: "UPDATE_OUTPUT", title, content });
-}
