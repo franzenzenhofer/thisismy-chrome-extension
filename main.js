@@ -1,3 +1,5 @@
+// main.js
+
 import { showNotification } from './notifications.js';
 import { addLogEntry } from './logger.js';
 import { initializeEventListeners } from './uiHandlers.js';
@@ -239,15 +241,23 @@ export const updateSelectionDisplay = () => {
 };
 
 const getFileIcon = (file) => {
+  const name = file.name.toLowerCase();
   const type = file.type;
+
   if (type.includes('pdf')) {
-    return '📄';
-  } else if (type.includes('wordprocessingml')) {
-    return '📄';
-  } else if (type.includes('text')) {
-    return '📄';
+    return '📄'; // PDF file
+  } else if (type.includes('wordprocessingml') || name.endsWith('.doc') || name.endsWith('.docx')) {
+    return '📄'; // Word document
+  } else if (type.includes('json') || name.endsWith('.json')) {
+    return '🔧'; // JSON file
+  } else if (type.includes('xml') || name.endsWith('.xml')) {
+    return '🔖'; // XML file
+  } else if (type.includes('csv') || name.endsWith('.csv')) {
+    return '📊'; // CSV file
+  } else if (type.includes('text') || name.endsWith('.txt') || name.endsWith('.md') || name.endsWith('.log')) {
+    return '📄'; // Plain text file
   } else {
-    return '❓';
+    return '❓'; // Unknown file type
   }
 };
 
@@ -310,7 +320,30 @@ export const updateOutputArea = () => {
     finalOutput = finalOutput.replace(/[\s\n]+/g, ' ').trim();
   }
   outputArea.textContent = finalOutput;
+
+  // Calculate approximate token count using the rule of thumb (1 token ≈ 4 characters)
+  const tokenCount = Math.ceil(finalOutput.length / 4);
+  
+  // Update the title attribute of the copy button
+  copyBtn.title = `~${tokenCount} tokens`;
 };
 
 // Initialize selection display
 updateSelectionDisplay();
+
+// Add the message listener to handle messages from the background script
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "UPDATE_OUTPUT") {
+    const { title, content } = message;
+    const key = `message:${Date.now()}`; // Generate a unique key
+    outputContents.set(key, content);
+    selectedSpecials.set(key, { name: title, icon: '🔔' });
+    updateSelectionDisplay();
+    updateOutputArea();
+    showNotification(`Received content: ${title}`, 'success');
+    addLogEntry(`Received content: ${title}`, 'success');
+    sendResponse({ success: true });
+  }
+  // Handle other message types if needed
+});
+

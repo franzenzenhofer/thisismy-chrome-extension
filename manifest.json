@@ -8,7 +8,8 @@
     "storage",
     "scripting",
     "activeTab",
-    "tabs"
+    "tabs",
+    "contextMenus"
   ],
   "host_permissions": ["<all_urls>"],
   "action": {
@@ -36,5 +37,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"  }
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }

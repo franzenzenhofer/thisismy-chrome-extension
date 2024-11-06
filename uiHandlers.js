@@ -1,6 +1,8 @@
+// uiHandlers.js
+
 import { showNotification } from './notifications.js';
 import { addLogEntry } from './logger.js';
-import { isValidURL, parseGitignore, matchGitignore } from './utils.js';
+import { isValidURL, parseIgnoreFile, matchIgnore } from './utils.js';
 import {
   dropzone,
   outputArea,
@@ -166,36 +168,44 @@ const handleDrop = (event) => {
     } else if (item.kind === 'file') {
       const entry = item.webkitGetAsEntry();
       if (entry) {
-        if (entry.isFile) {
-          entry.file((file) => {
-            addFile(file);
-          });
-        } else if (entry.isDirectory) {
-          traverseFileTree(entry);
-        }
+        traverseFileTree(entry);
       }
     }
   }
 };
 
-const traverseFileTree = async (entry, path = '') => {
+const traverseFileTree = async (entry, path = '', ignorePatterns = []) => {
   if (entry.isFile) {
     entry.file((file) => {
-      file.filePath = path + file.name;
-      if (!file.name.startsWith('.')) {
+      file.filePath = '/' + path + file.name;
+      if (!matchIgnore(file.filePath, ignorePatterns)) {
         addFile(file);
+      } else {
+        addLogEntry(`Ignored file: ${file.filePath}`, 'info');
       }
     });
   } else if (entry.isDirectory) {
     const dirReader = entry.createReader();
     const entries = await readAllEntries(dirReader);
 
-    // Check for .gitignore file in the directory
-    const gitignoreEntry = entries.find((e) => e.name === '.gitignore');
-    let gitignorePatterns = [];
-    if (gitignoreEntry) {
-      gitignorePatterns = await readGitignore(gitignoreEntry);
-      addLogEntry(`Parsed .gitignore in ${path}${entry.name}`, 'info');
+    // Initialize ignore patterns for this directory
+    let currentIgnorePatterns = [...ignorePatterns]; // Copy existing patterns
+
+    // Look for .thisismyignore or .gitignore
+    const ignoreFileEntry = entries.find((e) => e.name === '.thisismyignore' || e.name === '.gitignore');
+
+    if (ignoreFileEntry) {
+      const newPatterns = await readIgnoreFile(ignoreFileEntry);
+      if (ignoreFileEntry.name === '.thisismyignore') {
+        currentIgnorePatterns = newPatterns; // Override existing patterns
+        addLogEntry(`Parsed .thisismyignore in ${'/' + path + entry.name}`, 'info');
+      } else if (ignoreFileEntry.name === '.gitignore') {
+        // Only use .gitignore if .thisismyignore is not present
+        if (!entries.some((e) => e.name === '.thisismyignore')) {
+          currentIgnorePatterns = currentIgnorePatterns.concat(newPatterns); // Append patterns
+          addLogEntry(`Parsed .gitignore in ${'/' + path + entry.name}`, 'info');
+        }
+      }
     }
 
     for (let childEntry of entries) {
@@ -203,13 +213,23 @@ const traverseFileTree = async (entry, path = '') => {
         continue; // Ignore dotfiles
       }
       const childPath = path + entry.name + '/';
-      if (gitignorePatterns.length > 0 && matchGitignore(childPath, gitignorePatterns)) {
-        continue; // Ignore files/directories matching .gitignore
+      const relativePath = '/' + childPath + childEntry.name;
+
+      // Check if the child entry should be ignored
+      if (matchIgnore(relativePath, currentIgnorePatterns)) {
+        if (childEntry.isDirectory) {
+          addLogEntry(`Ignored directory: ${relativePath}`, 'info');
+        } else {
+          addLogEntry(`Ignored file: ${relativePath}`, 'info');
+        }
+        continue; // Skip ignored files/directories
       }
-      await traverseFileTree(childEntry, childPath);
+
+      await traverseFileTree(childEntry, childPath, currentIgnorePatterns);
     }
   }
 };
+
 
 const readAllEntries = (dirReader) => {
   return new Promise((resolve) => {
@@ -228,13 +248,13 @@ const readAllEntries = (dirReader) => {
   });
 };
 
-const readGitignore = (entry) => {
+const readIgnoreFile = (entry) => {
   return new Promise((resolve) => {
     entry.file((file) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const content = e.target.result;
-        const patterns = parseGitignore(content);
+        const patterns = parseIgnoreFile(content);
         resolve(patterns);
       };
       reader.onerror = () => {
@@ -247,13 +267,53 @@ const readGitignore = (entry) => {
 
 const handleFiles = (fileList) => {
   const files = Array.from(fileList);
-  const gitignorePatterns = [];
-  files.forEach((file) => {
-    file.filePath = file.webkitRelativePath || file.name;
-    if (!file.name.startsWith('.') && !matchGitignore(file.filePath, gitignorePatterns)) {
-      addFile(file);
-    }
-  });
+  let ignorePatterns = [];
+
+  // Check if any of the files is .thisismyignore or .gitignore
+  const ignoreFile = files.find((file) => file.name === '.thisismyignore' || file.name === '.gitignore');
+
+  if (ignoreFile) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target.result;
+      const patterns = parseIgnoreFile(content);
+      if (ignoreFile.name === '.thisismyignore') {
+        ignorePatterns = patterns; // Override existing patterns
+        addLogEntry(`Parsed .thisismyignore in root`, 'info');
+      } else if (ignoreFile.name === '.gitignore') {
+        ignorePatterns = patterns; // Use .gitignore patterns
+        addLogEntry(`Parsed .gitignore in root`, 'info');
+      }
+
+      // Process remaining files
+      files.forEach((file) => {
+        if (file.name.startsWith('.')) {
+          return; // Ignore dotfiles
+        }
+        if (!matchIgnore(file.webkitRelativePath || file.name, ignorePatterns)) {
+          addFile(file);
+        } else {
+          addLogEntry(`Ignored file: ${file.webkitRelativePath || file.name}`, 'info');
+        }
+      });
+    };
+    reader.onerror = () => {
+      // If reading fails, process files without ignore patterns
+      files.forEach((file) => {
+        if (!file.name.startsWith('.')) {
+          addFile(file);
+        }
+      });
+    };
+    reader.readAsText(ignoreFile);
+  } else {
+    // No ignore file, process normally
+    files.forEach((file) => {
+      if (!file.name.startsWith('.')) {
+        addFile(file);
+      }
+    });
+  }
 };
 
 // Function to Get Current Page Content

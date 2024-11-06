@@ -131,5 +131,8 @@ dist
 .DS_Store
 /downloaders
 /test 
+/libs
+/icons
+/css
 /testfolder
 
