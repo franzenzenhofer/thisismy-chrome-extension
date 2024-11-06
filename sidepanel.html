@@ -3,64 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <title>thisismy by Franz Enzenhofer</title>
+  <!-- Materialize CSS -->
+  <link rel="stylesheet" href="css/materialize.min.css">
+  <link rel="stylesheet" href="css/material-icons.css">
+  <!-- Your Custom Styles -->
   <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 </head>
 <body>
   <div class="container">
 
     <!-- Notification Area -->
-    <div id="notification" class="notification"></div>
+    <div id="notification" class="card-panel teal lighten-4 notification"></div>
 
     <!-- Top Controls -->
     <div class="top-controls">
-      <button id="get-current-url-btn" class="primary-btn">Get Current URL</button>
-      <button id="get-current-page-content-btn" class="primary-btn">Get Current Page Content</button>
-      <button id="get-selected-content-btn" class="primary-btn">Get Selected Content</button>
+      <a id="get-current-url-btn" class="btn waves-effect waves-light">Get Current URL</a>
+      <a id="get-current-page-content-btn" class="btn waves-effect waves-light">Get Current Page Content</a>
+      <a id="get-selected-content-btn" class="btn waves-effect waves-light">Get Selected Content</a>
     </div>
 
     <!-- URL Input Field -->
-    <div class="url-input-container">
-      <input type="text" id="url-input" placeholder="Enter URL">
-      <button id="add-url-btn">Add URL</button>
+    <div class="row valign-wrapper">
+      <div class="input-field col s9">
+        <input type="text" id="url-input" placeholder="Enter URL">
+      </div>
+      <div class="col s3">
+        <a id="add-url-btn" class="btn waves-effect waves-light">Add URL</a>
+      </div>
     </div>
 
-    <!-- Unified Drag and Drop Area -->
-    <div id="dropzone" class="dropzone">
+    <!-- Dropzone -->
+    <div id="dropzone" class="dropzone card-panel hoverable">
       <p>📁🔗 Drag & Drop Files or URLs Here or <span class="select-link">Click to Select Files</span></p>
     </div>
 
     <!-- Selection Display -->
-    <div id="selection-display" class="selection-display"></div>
+    <div id="selection-display" class="selection-display card-panel hoverable"></div>
 
     <!-- Processing Indicator -->
-    <div id="processing-indicator" class="processing-indicator"></div>
+    <div id="processing-indicator" class="processing-indicator card-panel teal lighten-4"></div>
 
     <!-- Output Section -->
-    <div id="output-section">
+    <div id="output-section" class="card-panel">
       <pre id="output" class="output"></pre>
     </div>
 
     <!-- Action Buttons -->
     <div class="actions">
-      <label class="action-label">
-        <input type="checkbox" id="remove-whitespaces"> Remove Whitespaces
+      <label>
+        <input type="checkbox" id="remove-whitespaces" />
+        <span>Remove Whitespaces</span>
       </label>
-      <button id="copy-output" class="action-btn">Copy to Clipboard</button>
-      <button id="save-output" class="action-btn">Save</button>
+      <br>
+      <div class="center-align">
+        <a id="copy-output" class="btn waves-effect waves-light">Copy</a>
+        <a id="save-output" class="btn waves-effect waves-light">Save</a>
+      </div>
     </div>
 
-    <!-- Collapsible Log Area -->
+    <!-- Separator Line -->
+    <hr>
+
+    <!-- Log Area -->
     <div id="log-container" class="log-container">
-      <button id="toggle-log-btn" class="log-toggle-btn">Show Log</button>
-      <div id="log-content" class="log-content"></div>
+      <a id="toggle-log-btn" class="btn waves-effect waves-light">Show Logs</a>
+      <div id="log-content" class="log-content card-panel teal lighten-5"></div>
     </div>
   </div>
 
-  <!-- Include necessary libraries -->
+   <!-- Some space at the end -->
+    <br><br>
+
+  <!-- Libraries -->
   <script src="libs/pdf.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'libs/pdf.worker.js';
+  </script>
   <script src="libs/mammoth.browser.min.js"></script>
   <script src="libs/Readability.js"></script>
-
+ <!-- <script src="libs/materialize.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', M.AutoInit);
+  </script> -->
   <!-- Main Script -->
   <script type="module" src="main.js"></script>
 </body>

@@ -1,7 +1,7 @@
 // uiHandlers.js
 import { showNotification } from './notifications.js';
 import { addLogEntry } from './logger.js';
-import { isValidURL } from './utils.js';
+import { isValidURL, parseGitignore, matchGitignore } from './utils.js';
 import {
   dropzone,
   outputArea,
@@ -30,7 +30,7 @@ import {
 
 export const initializeEventListeners = () => {
   // Event Listeners
-  const dropTargets = [dropzone, outputArea, urlInput, selectionDisplay];
+  const dropTargets = [dropzone, outputArea, urlInput];
   dropTargets.forEach((element) => {
     element.addEventListener('dragover', (e) => {
       e.preventDefault();
@@ -44,6 +44,15 @@ export const initializeEventListeners = () => {
       dropzone.classList.remove('dragover');
       handleDrop(e);
     });
+  });
+
+  // Add drop handling to selectionDisplay without CSS changes
+  selectionDisplay.addEventListener('dragover', (e) => {
+    e.preventDefault();
+  });
+  selectionDisplay.addEventListener('drop', (e) => {
+    e.preventDefault();
+    handleDrop(e);
   });
 
   addUrlBtn.addEventListener('click', () => {
@@ -77,7 +86,7 @@ export const initializeEventListeners = () => {
         showNotification('Output copied to clipboard!', 'success');
         copyBtn.textContent = 'Copied!';
         setTimeout(() => {
-          copyBtn.textContent = 'Copy to Clipboard';
+          copyBtn.textContent = 'Copy';
         }, 2000);
       },
       (err) => {
@@ -108,12 +117,11 @@ export const initializeEventListeners = () => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.multiple = true;
+    fileInput.webkitdirectory = true;
     fileInput.click();
     fileInput.addEventListener('change', (event) => {
       const files = event.target.files;
-      for (const file of files) {
-        addFile(file);
-      }
+      handleFiles(files);
     });
   });
 
@@ -137,7 +145,6 @@ export const initializeEventListeners = () => {
   });
 };
 
-
 const handleDrop = (event) => {
   const items = event.dataTransfer.items;
   for (let item of items) {
@@ -150,10 +157,96 @@ const handleDrop = (event) => {
         }
       });
     } else if (item.kind === 'file') {
-      const file = item.getAsFile();
-      addFile(file);
+      const entry = item.webkitGetAsEntry();
+      if (entry) {
+        if (entry.isFile) {
+          entry.file((file) => {
+            addFile(file);
+          });
+        } else if (entry.isDirectory) {
+          traverseFileTree(entry);
+        }
+      }
     }
   }
+};
+
+const traverseFileTree = async (entry, path = '') => {
+  if (entry.isFile) {
+    entry.file((file) => {
+      file.filePath = path + file.name;
+      if (!file.name.startsWith('.')) {
+        addFile(file);
+      }
+    });
+  } else if (entry.isDirectory) {
+    const dirReader = entry.createReader();
+    const entries = await readAllEntries(dirReader);
+
+    // Check for .gitignore file in the directory
+    const gitignoreEntry = entries.find((e) => e.name === '.gitignore');
+    let gitignorePatterns = [];
+    if (gitignoreEntry) {
+      gitignorePatterns = await readGitignore(gitignoreEntry);
+      addLogEntry(`Parsed .gitignore in ${path}${entry.name}`, 'info');
+    }
+
+    for (let childEntry of entries) {
+      if (childEntry.name.startsWith('.')) {
+        continue; // Ignore dotfiles
+      }
+      const childPath = path + entry.name + '/';
+      if (gitignorePatterns.length > 0 && matchGitignore(childPath, gitignorePatterns)) {
+        continue; // Ignore files/directories matching .gitignore
+      }
+      await traverseFileTree(childEntry, childPath);
+    }
+  }
+};
+
+const readAllEntries = (dirReader) => {
+  return new Promise((resolve) => {
+    let entries = [];
+    const readEntries = () => {
+      dirReader.readEntries((results) => {
+        if (!results.length) {
+          resolve(entries);
+        } else {
+          entries = entries.concat(Array.from(results));
+          readEntries();
+        }
+      });
+    };
+    readEntries();
+  });
+};
+
+const readGitignore = (entry) => {
+  return new Promise((resolve) => {
+    entry.file((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target.result;
+        const patterns = parseGitignore(content);
+        resolve(patterns);
+      };
+      reader.onerror = () => {
+        resolve([]);
+      };
+      reader.readAsText(file);
+    });
+  });
+};
+
+const handleFiles = (fileList) => {
+  const files = Array.from(fileList);
+  const gitignorePatterns = [];
+  files.forEach((file) => {
+    file.filePath = file.webkitRelativePath || file.name;
+    if (!file.name.startsWith('.') && !matchGitignore(file.filePath, gitignorePatterns)) {
+      addFile(file);
+    }
+  });
 };
 
 // Function to Get Current Page Content
@@ -239,8 +332,8 @@ function getSelectedContent() {
             const footer = `\n\nEnd of selected content from ${url}`;
             const fullContent = header + content + footer;
             const key = `selection:${url}`;
-            outputContents.set(key, fullContent);
             selectedSpecials.set(key, { name: `Selected Content from ${url}`, icon: '✂️' });
+            outputContents.set(key, fullContent);
             updateSelectionDisplay();
             updateOutputArea();
             showNotification('Got selected content.', 'success');

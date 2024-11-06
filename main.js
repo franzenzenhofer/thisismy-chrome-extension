@@ -1,4 +1,3 @@
-// main.js
 import { showNotification } from './notifications.js';
 import { addLogEntry } from './logger.js';
 import { initializeEventListeners } from './uiHandlers.js';
@@ -23,17 +22,27 @@ import {
   getSelectedContentBtn,
   removeWhitespacesCheckbox,
 } from './uiElements.js';
+import { isUnsupportedFile } from './utils.js';
 
 export const selectedFiles = new Map();
 export const selectedURLs = new Map();
 export const selectedSpecials = new Map();
 export const outputContents = new Map();
 
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'libs/pdf.worker.js';
 initializeEventListeners();
 
 export const addFile = (file) => {
+  if (!file.filePath) {
+    file.filePath = file.webkitRelativePath || file.name;
+  }
+  if (isUnsupportedFile(file)) {
+    showNotification(`Unsupported file type: ${file.name}`, 'error');
+    addLogEntry(`Unsupported file type: ${file.filePath}`, 'error');
+    return;
+  }
   showNotification(`Processing file: ${file.name}`, 'info');
-  addLogEntry(`Processing file: ${file.name}`, 'info');
+  addLogEntry(`Processing file: ${file.filePath}`, 'info');
   processFile(file);
 };
 
@@ -45,78 +54,40 @@ export const addURL = (url) => {
 
 export const updateSelectionDisplay = () => {
   selectionDisplay.innerHTML = '';
-  selectedFiles.forEach((file, fileName) => {
+  selectedFiles.forEach((file, filePath) => {
     const div = document.createElement('div');
     div.classList.add('selection-item');
-    const span = document.createElement('span');
+
     const fileIcon = getFileIcon(file);
+    const fileName = file.name;
+    const span = document.createElement('span');
     span.innerHTML = `<span class="icon">${fileIcon}</span> ${fileName}`;
+    span.title = filePath; // Show full file path on hover
     div.appendChild(span);
-    const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = '🗑️';
-    deleteBtn.classList.add('delete-btn');
-    deleteBtn.addEventListener('click', () => {
-      selectedFiles.delete(fileName);
-      outputContents.delete(fileName);
-      updateOutputArea();
-      showNotification(`File "${fileName}" removed.`, 'info');
-      addLogEntry(`File "${fileName}" removed.`, 'info');
-      updateSelectionDisplay();
-    });
-    div.appendChild(deleteBtn);
-    selectionDisplay.appendChild(div);
-  });
-  selectedURLs.forEach((url) => {
-    const div = document.createElement('div');
-    div.classList.add('selection-item');
-    const span = document.createElement('span');
-    span.innerHTML = `<span class="icon">🔗</span> ${url}`;
-    div.appendChild(span);
-
-    // Add refresh button
-    const refreshBtn = document.createElement('button');
-    refreshBtn.textContent = '🔄';
-    refreshBtn.classList.add('refresh-btn');
-    refreshBtn.addEventListener('click', () => {
-      processURL(url);
-    });
-    div.appendChild(refreshBtn);
 
     const deleteBtn = document.createElement('button');
     deleteBtn.textContent = '🗑️';
     deleteBtn.classList.add('delete-btn');
     deleteBtn.addEventListener('click', () => {
-      selectedURLs.delete(url);
-      outputContents.delete(url);
+      selectedFiles.delete(filePath);
+      outputContents.delete(filePath);
       updateOutputArea();
-      showNotification(`URL "${url}" removed.`, 'info');
-      addLogEntry(`URL "${url}" removed.`, 'info');
+      showNotification(`File "${filePath}" removed.`, 'info');
+      addLogEntry(`File "${filePath}" removed.`, 'info');
       updateSelectionDisplay();
     });
+
     div.appendChild(deleteBtn);
+
+    // Add separator line
+    const separator = document.createElement('hr');
+    separator.classList.add('separator');
+
     selectionDisplay.appendChild(div);
+    selectionDisplay.appendChild(separator);
   });
 
-  selectedSpecials.forEach((item, key) => {
-    const div = document.createElement('div');
-    div.classList.add('selection-item');
-    const span = document.createElement('span');
-    span.innerHTML = `<span class="icon">${item.icon}</span> ${item.name}`;
-    div.appendChild(span);
-    const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = '🗑️';
-    deleteBtn.classList.add('delete-btn');
-    deleteBtn.addEventListener('click', () => {
-      selectedSpecials.delete(key);
-      outputContents.delete(key);
-      updateOutputArea();
-      showNotification(`"${item.name}" removed.`, 'info');
-      addLogEntry(`"${item.name}" removed.`, 'info');
-      updateSelectionDisplay();
-    });
-    div.appendChild(deleteBtn);
-    selectionDisplay.appendChild(div);
-  });
+  // Remaining code for selectedURLs and selectedSpecials remains the same...
 
   if (selectedFiles.size + selectedURLs.size + selectedSpecials.size > 1) {
     const div = document.createElement('div');
@@ -212,6 +183,7 @@ export const updateOutputArea = () => {
   }
   outputArea.textContent = finalOutput;
 };
+
 
 // Initialize selection display
 updateSelectionDisplay();

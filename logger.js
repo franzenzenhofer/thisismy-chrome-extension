@@ -6,10 +6,13 @@ export const toggleLogBtn = document.getElementById('toggle-log-btn');
 
 let isLogVisible = false;
 
+// Hide the log content by default
+logContent.style.display = 'none';
+
 toggleLogBtn.addEventListener('click', () => {
   isLogVisible = !isLogVisible;
   logContent.style.display = isLogVisible ? 'block' : 'none';
-  toggleLogBtn.textContent = isLogVisible ? 'Hide Log' : 'Show Log';
+  toggleLogBtn.textContent = isLogVisible ? 'Hide Logs' : 'Show Logs';
 });
 
 export const addLogEntry = (message, type = 'info') => {

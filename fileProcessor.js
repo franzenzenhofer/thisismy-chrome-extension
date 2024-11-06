@@ -1,5 +1,3 @@
-// fileProcessor.js
-
 import { processingIndicator, outputArea } from './uiElements.js';
 import { showNotification } from './notifications.js';
 import { addLogEntry } from './logger.js';
@@ -7,8 +5,8 @@ import { outputContents, updateOutputArea } from './main.js';
 
 export const readFile = async (file) => {
   let content = '';
-  const header = `This is my current ${file.name}\n\n`;
-  const footer = `\n\nThis is the end of ${file.name}`;
+  const header = `This is my current ${file.filePath}\n\n`;
+  const footer = `\n\nThis is the end of ${file.filePath}\n\n`;
 
   if (file.type === 'application/pdf') {
     const pdfContent = await readPDFFile(file);
@@ -59,7 +57,7 @@ const readTextFile = (file) => {
 const readPDFFile = async (file) => {
   try {
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     let pdfText = '';
 
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -79,7 +77,7 @@ const readPDFFile = async (file) => {
 const readWordFile = async (file) => {
   try {
     const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.extractRawText({ arrayBuffer });
+    const result = await window.mammoth.extractRawText({ arrayBuffer });
     return result.value;
   } catch (error) {
     console.error('Error reading Word file:', error);
