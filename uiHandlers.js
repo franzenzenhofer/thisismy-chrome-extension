@@ -396,7 +396,9 @@ function getCurrentPageContent() {
             } else {
               const content = results[0].result;
               const url = tabs[0].url;
-              const header = `Content from ${url}\n\n`;
+              const now = new Date();
+              const formattedDate = now.toISOString().slice(0, 19).replace('T', ' ');
+              const header = `Fetched content from ${url} on ${formattedDate}\n\n`;
               const footer = `\n\nEnd of content from ${url}`;
               const fullContent = header + content + footer;
               const key = `page:${Date.now()}`; // Use Date.now() for uniqueness
@@ -441,7 +443,9 @@ function getSelectedContent() {
           const content = results[0].result.trim();
           if (content) {
             const url = tabs[0].url;
-            const header = `Selected content from ${url}\n\n`;
+            const now = new Date();
+            const formattedDate = now.toISOString().slice(0, 19).replace('T', ' ');
+            const header = `Selected content from ${url} on ${formattedDate}\n\n`;
             const footer = `\n\nEnd of selected content from ${url}`;
             const fullContent = header + content + footer;
             const key = `selection:${Date.now()}`; // Use Date.now() for uniqueness

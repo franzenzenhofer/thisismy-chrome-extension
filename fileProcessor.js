@@ -2,7 +2,9 @@
 
 export const readFile = async (file) => {
   let content = '';
-  const header = `This is my current ${file.filePath}\n\n`;
+  const now = new Date();
+  const formattedDate = now.toISOString().slice(0, 19).replace('T', ' ');
+  const header = `This is my current ${file.filePath} on ${formattedDate}\n\n`;
   const footer = `\n\nThis is the end of ${file.filePath}\n\n`;
 
   if (file.type === 'application/pdf') {

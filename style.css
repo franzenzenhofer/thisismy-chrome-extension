@@ -106,11 +106,25 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 5px 0;
+  padding: 15px 10px; /* Increased padding for larger hit area */
   white-space: pre-wrap;
   word-wrap: break-word;
   text-overflow: ellipsis;
   overflow: hidden;
+  cursor: grab;
+  transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+.selection-item.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+
+}
+
+.selection-item.over {
+  background-color: #e0f7fa; /* Light cyan background when over */
+  border: 2px dashed #2196F3;
+
 }
 
 .selection-item .icon {
@@ -127,6 +141,10 @@ body {
   border: none;
   cursor: pointer;
   font-size: 16px;
+}
+
+.delete-btn:hover {
+  color: #c62828;
 }
 
 .separator {
@@ -164,6 +182,11 @@ body {
 .actions {
   margin-top: 20px;
   text-align: center;
+  position: sticky;
+  bottom: 0;
+  background-color: #fafafa;
+  padding-bottom: 10px;
+  padding-top: 10px;
 }
 
 .actions label {
@@ -222,4 +245,14 @@ hr {
 .top-controls a {
   margin-right: 5px;
   margin-bottom: 5px;
+}
+
+/* Ensure cursor remains pointer over delete button */
+.selection-item .delete-btn {
+  cursor: pointer;
+}
+
+/* Optional: Change cursor when dragging over items */
+.selection-item.over {
+  cursor: move;
 }

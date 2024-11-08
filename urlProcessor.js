@@ -2,6 +2,7 @@
 
 
 import { addLogEntry } from './logger.js';
+import { getFormattedDateTime } from './utils.js';
 
 
 export const fetchURLContent = async (url) => {
@@ -26,7 +27,9 @@ const parseHTMLContent = (html, url) => {
   const doc = parser.parseFromString(html, 'text/html');
   const article = new Readability(doc).parse();
   if (article && article.textContent) {
-    const header = `Content from ${url}\n\n`;
+    const now = new Date();
+    const formattedDate = now.toISOString().slice(0, 19).replace('T', ' ');
+    const header = `Fetched content from ${url} on ${formattedDate}\n\n`;
     const footer = `\n\nEnd of content from ${url}`;
     const content = header + article.textContent + footer;
     return content;
