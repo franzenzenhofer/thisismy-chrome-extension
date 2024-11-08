@@ -63,7 +63,7 @@ export const addNote = (note) => {
 
 const processNote = (note) => {
   const key = `note:${Date.now()}`; // Use timestamp as key to ensure uniqueness
-  const content = `This is a Note:\n\n${note}\n\nEnd of Note.\n\n`;
+  const content = `----\n\n${note}\n\n----\n\n`;
   outputContents.set(key, content);
   selectedNotes.set(key, note);
   updateSelectionDisplay();

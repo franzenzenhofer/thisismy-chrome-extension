@@ -186,6 +186,10 @@ body {
   text-align: center;
 }
 
+#get-current-url-btn {
+display: none;
+}
+
 .import-export .btn {
   margin: 5px;
 }
