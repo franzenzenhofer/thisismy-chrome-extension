@@ -1,7 +1,4 @@
-import { processingIndicator, outputArea } from './uiElements.js';
-import { showNotification } from './notifications.js';
-import { addLogEntry } from './logger.js';
-import { outputContents, updateOutputArea } from './main.js';
+
 
 export const readFile = async (file) => {
   let content = '';

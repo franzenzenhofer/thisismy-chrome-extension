@@ -1,8 +1,8 @@
 // urlProcessor.js
 
-import { showNotification } from './notifications.js';
+
 import { addLogEntry } from './logger.js';
-import { outputContents, updateOutputArea } from './main.js';
+
 
 export const fetchURLContent = async (url) => {
   try {

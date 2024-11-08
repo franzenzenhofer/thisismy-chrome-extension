@@ -28,12 +28,8 @@ import {
 } from './uiElements.js';
 import { isUnsupportedFile, getFileIcon, getFormattedDateTime } from './utils.js';
 
-export const selectedFiles = new Map();
-export const selectedURLs = new Map();
-export const selectedNotes = new Map();
-export const selectedSpecials = new Map();
-export const outputContents = new Map();
-export const selectionOrder = [];
+// Import shared state variables
+import { selectedFiles, selectedURLs, selectedNotes, selectedSpecials, outputContents, selectionOrder } from './state.js';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'libs/pdf.worker.js';
 initializeEventListeners();
@@ -53,7 +49,6 @@ export const addFile = (file) => {
 };
 
 export const addURL = (url) => {
-  // Check if URL ends with .thisismy.json
   if (url.trim().endsWith('.thisismy.json')) {
     importBriefingFromURL(url);
   } else {
@@ -110,7 +105,6 @@ const processFile = async (file) => {
   processingIndicator.textContent = `Processing "${file.name}"...`;
   processingIndicator.style.display = 'block';
   try {
-    // Check if the file is a .thisismy.json file and only one file is being processed
     if (
       file.name.endsWith('.thisismy.json') &&
       selectedFiles.size + selectedURLs.size + selectedNotes.size + selectedSpecials.size === 0
@@ -120,7 +114,6 @@ const processFile = async (file) => {
       const content = await readFile(file);
       if (content !== null) {
         outputContents.set(file.filePath, content);
-        // Store file metadata instead of the File object
         selectedFiles.set(file.filePath, {
           name: file.name,
           filePath: file.filePath,
@@ -145,8 +138,6 @@ const processFile = async (file) => {
   }
 };
 
-
-
 export const updateOutputArea = () => {
   let finalOutput = '';
   selectionOrder.forEach((key) => {
@@ -160,17 +151,13 @@ export const updateOutputArea = () => {
   }
   outputArea.textContent = finalOutput;
 
-  // Calculate approximate token count using the rule of thumb (1 token ≈ 4 characters)
   const tokenCount = Math.ceil(finalOutput.length / 4);
 
-  // Update the title attribute of the copy button
   copyBtn.title = `~${tokenCount} tokens`;
 };
 
-// Initialize selection display
 updateSelectionDisplay();
 
-// Message listener to handle messages from the background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'ADD_SELECTED_CONTENT') {
     const { content, url } = message;
@@ -185,10 +172,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     addLogEntry(`Received selected content from ${url}`, 'success');
     sendResponse({ success: true });
   }
-  // Handle other message types if needed
 });
 
-// On side panel load, check for stored selected content
 document.addEventListener('DOMContentLoaded', () => {
   chrome.storage.local.get('selectedContent', (data) => {
     if (data.selectedContent) {
@@ -203,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
       showNotification(`Received selected content from ${url}`, 'success');
       addLogEntry(`Received selected content from ${url}`, 'success');
 
-      // Remove the stored content
       chrome.storage.local.remove('selectedContent', () => {
         console.log('Selected content removed from chrome.storage.local');
       });
@@ -211,7 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Function to import briefing from a URL ending with .thisismy.json
 const importBriefingFromURL = async (url) => {
   try {
     const response = await fetch(url);

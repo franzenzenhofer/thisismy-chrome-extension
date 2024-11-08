@@ -2,7 +2,7 @@
 
 import { showNotification } from './notifications.js';
 import { addLogEntry } from './logger.js';
-import { isValidURL, parseIgnoreFile, matchIgnore } from './utils.js';
+import { isValidURL, parseIgnoreFile, matchIgnore, getFormattedDateTime } from './utils.js';
 import {
   dropzone,
   outputArea,
@@ -26,14 +26,11 @@ import {
   selectedNotes,
   selectedSpecials,
   outputContents,
-  updateOutputArea,
-  addFile,
-  addURL,
-  addNote,
-
-} from './main.js';
+  selectionOrder,
+} from './state.js';
+import { updateOutputArea, addFile, addURL, addNote } from './main.js';
 import { importBriefing, exportBriefing } from './importexport.js';
-import {  updateSelectionDisplay, } from './selectionlist.js';
+import { updateSelectionDisplay } from './selectionlist.js';
 
 export const initializeEventListeners = () => {
   // Event Listeners
@@ -51,18 +48,12 @@ export const initializeEventListeners = () => {
       dropzone.classList.remove('dragover');
       handleDrop(e);
     });
-
-  
-  
-
   });
-
 
   exportBtn.addEventListener('click', () => {
     exportBtn.disabled = true;
     exportBtn.textContent = 'Exporting...';
     exportBriefing();
-    // Re-enable the button after 5 seconds or when the download starts
     setTimeout(() => {
       exportBtn.disabled = false;
       exportBtn.textContent = 'Export';
@@ -95,7 +86,7 @@ export const initializeEventListeners = () => {
     });
   });
 
-  // Add drop handling to selectionDisplay without CSS changes
+  // Add drop handling to selectionDisplay
   selectionDisplay.addEventListener('dragover', (e) => {
     e.preventDefault();
   });
@@ -192,10 +183,14 @@ export const initializeEventListeners = () => {
   });
 
   getCurrentPageContentBtn.addEventListener('click', () => {
+    console.log('Get Current Page Content button clicked.');
+    addLogEntry('Get Current Page Content button clicked.', 'info');
     getCurrentPageContent();
   });
 
   getSelectedContentBtn.addEventListener('click', () => {
+    console.log('Get Selected Content button clicked.');
+    addLogEntry('Get Selected Content button clicked.', 'info');
     getSelectedContent();
   });
 };
@@ -275,7 +270,6 @@ const traverseFileTree = async (entry, path = '', ignorePatterns = []) => {
     }
   }
 };
-
 
 const readAllEntries = (dirReader) => {
   return new Promise((resolve) => {
@@ -362,7 +356,6 @@ const handleFiles = (fileList) => {
   }
 };
 
-// Function to Get Current Page Content
 function getCurrentPageContent() {
   processingIndicator.textContent = 'Getting current page content...';
   processingIndicator.style.display = 'block';
@@ -393,18 +386,23 @@ function getCurrentPageContent() {
           },
           (results) => {
             processingIndicator.style.display = 'none';
-            if (chrome.runtime.lastError || !results || !results[0].result) {
+            addLogEntry('Current page content processing.', 'success');
+            if (chrome.runtime.lastError) {
               showNotification('Failed to get page content.', 'error');
-              addLogEntry('Failed to get current page content.', 'error');
+              addLogEntry(`Failed to get current page content: ${chrome.runtime.lastError.message}`, 'error');
+            } else if (!results || !results[0].result) {
+              showNotification('Failed to get page content.', 'error');
+              addLogEntry('Failed to get current page content: No results returned.', 'error');
             } else {
               const content = results[0].result;
               const url = tabs[0].url;
               const header = `Content from ${url}\n\n`;
               const footer = `\n\nEnd of content from ${url}`;
               const fullContent = header + content + footer;
-              const key = `page:${url}`;
-              outputContents.set(key, fullContent);
+              const key = `page:${Date.now()}`; // Use Date.now() for uniqueness
               selectedSpecials.set(key, { name: `Current Page Content from ${url}`, icon: '📰' });
+              outputContents.set(key, fullContent);
+              selectionOrder.push(key); // Add key to selectionOrder
               updateSelectionDisplay();
               updateOutputArea();
               showNotification('Got current page content.', 'success');
@@ -417,7 +415,6 @@ function getCurrentPageContent() {
   });
 }
 
-// Function to Get Selected Content
 function getSelectedContent() {
   processingIndicator.textContent = 'Getting selected content...';
   processingIndicator.style.display = 'block';
@@ -434,9 +431,12 @@ function getSelectedContent() {
       },
       (results) => {
         processingIndicator.style.display = 'none';
-        if (chrome.runtime.lastError || !results || !results[0].result) {
+        if (chrome.runtime.lastError) {
           showNotification('Failed to get selected content.', 'error');
-          addLogEntry('Failed to get selected content.', 'error');
+          addLogEntry(`Failed to get selected content: ${chrome.runtime.lastError.message}`, 'error');
+        } else if (!results || !results[0].result) {
+          showNotification('Failed to get selected content.', 'error');
+          addLogEntry('Failed to get selected content: No results returned.', 'error');
         } else {
           const content = results[0].result.trim();
           if (content) {
@@ -444,9 +444,10 @@ function getSelectedContent() {
             const header = `Selected content from ${url}\n\n`;
             const footer = `\n\nEnd of selected content from ${url}`;
             const fullContent = header + content + footer;
-            const key = `selection:${url}`;
+            const key = `selection:${Date.now()}`; // Use Date.now() for uniqueness
             selectedSpecials.set(key, { name: `Selected Content from ${url}`, icon: '✂️' });
             outputContents.set(key, fullContent);
+            selectionOrder.push(key); // Add key to selectionOrder
             updateSelectionDisplay();
             updateOutputArea();
             showNotification('Got selected content.', 'success');
@@ -459,15 +460,4 @@ function getSelectedContent() {
       }
     );
   });
-}
-
-function getFormattedDateTime() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth()+1).padStart(2,'0');
-  const day = String(now.getDate()).padStart(2,'0');
-  const hour = String(now.getHours()).padStart(2,'0');
-  const minute = String(now.getMinutes()).padStart(2,'0');
-  const second = String(now.getSeconds()).padStart(2,'0');
-  return `${year}-${month}-${day}-${hour}-${minute}-${second}`;
 }

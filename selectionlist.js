@@ -6,13 +6,13 @@ import {
     selectedNotes,
     selectedSpecials,
     outputContents,
-    updateOutputArea,
-    selectionOrder
-  } from './main.js';
+    selectionOrder,
+  } from './state.js';
   import { selectionDisplay } from './uiElements.js';
-  import { isUnsupportedFile, getFileIcon, getFormattedDateTime } from './utils.js';
+  import { getFileIcon } from './utils.js';
   import { showNotification } from './notifications.js';
   import { addLogEntry } from './logger.js';
+  import { updateOutputArea } from './main.js';
   
   export const updateSelectionDisplay = () => {
     selectionDisplay.innerHTML = '';
@@ -56,9 +56,9 @@ import {
       const deleteBtn = document.createElement('button');
       deleteBtn.textContent = '🗑️';
       deleteBtn.classList.add('delete-btn');
-      deleteBtn.draggable = false; // Prevent interference with drag events
+      deleteBtn.draggable = false;
       deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent click event from affecting drag events
+        e.stopPropagation();
         if (selectedFiles.has(key)) {
           selectedFiles.delete(key);
         } else if (selectedURLs.has(key)) {
@@ -113,6 +113,7 @@ import {
     }
   };
   
+  // Drag and Drop Handlers
   let dragSrcEl = null;
   
   function handleDragStart(e) {
@@ -121,7 +122,7 @@ import {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', this.dataset.key);
   
-    this.classList.add('dragging'); // Add dragging class
+    this.classList.add('dragging');
   }
   
   function handleDragOver(e) {
@@ -165,7 +166,7 @@ import {
   
   function handleDragEnd(e) {
     this.style.opacity = '1.0';
-    this.classList.remove('dragging'); // Remove dragging class
+    this.classList.remove('dragging');
   
     const items = selectionDisplay.querySelectorAll('.selection-item');
     items.forEach((item) => {

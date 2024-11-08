@@ -2,23 +2,22 @@
 
 import {
   outputContents,
-  updateOutputArea,
-  selectionOrder,
   selectedFiles,
   selectedURLs,
   selectedNotes,
   selectedSpecials,
-} from './main.js';
+  selectionOrder,
+} from './state.js';
+import { updateOutputArea } from './main.js';
 import { showNotification } from './notifications.js';
 import { addLogEntry } from './logger.js';
 import { updateSelectionDisplay } from './selectionlist.js';
-import { isUnsupportedFile, getFileIcon, getFormattedDateTime } from './utils.js';
-
+import { getFormattedDateTime } from './utils.js';
 
 export const exportBriefing = () => {
   try {
     const briefingData = {
-      selectedFiles: Array.from(selectedFiles.entries()), // Now contains file metadata
+      selectedFiles: Array.from(selectedFiles.entries()),
       selectedURLs: Array.from(selectedURLs.entries()),
       selectedNotes: Array.from(selectedNotes.entries()),
       selectedSpecials: Array.from(selectedSpecials.entries()),
@@ -90,5 +89,3 @@ export const importBriefing = async (file) => {
     addLogEntry(`Failed to import briefing: ${error.message}`, 'error');
   }
 };
-
-
