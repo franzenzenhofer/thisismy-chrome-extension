@@ -21,7 +21,7 @@ export const exportBriefing = () => {
 
     const a = document.createElement('a');
     a.href = url;
-    const filename = `thisismy-briefing-${getFormattedDateTime()}.json`;
+    const filename = `thisismy-briefing-${getFormattedDateTime()}.thisismy.json`;
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
