@@ -70,27 +70,62 @@ const processNote = (note) => {
   updateOutputArea();
 };
 
+const processFile = async (file) => {
+  processingIndicator.textContent = `Processing "${file.name}"...`;
+  processingIndicator.style.display = 'block';
+  try {
+    const content = await readFile(file);
+    if (content !== null) {
+      outputContents.set(file.filePath, content);
+      // Store file metadata instead of the File object
+      selectedFiles.set(file.filePath, {
+        name: file.name,
+        filePath: file.filePath,
+        type: file.type,
+      });
+      updateSelectionDisplay();
+      updateOutputArea();
+      showNotification(`Processed file: ${file.name}`, 'success');
+      addLogEntry(`Processed file: ${file.filePath}`, 'success');
+    } else {
+      showNotification(`Unsupported file type: ${file.name}`, 'error');
+      addLogEntry(`Unsupported file type: ${file.name}`, 'error');
+    }
+  } catch (error) {
+    console.error(error);
+    showNotification(`Error processing file: ${file.name}`, 'error');
+    addLogEntry(`Error processing file: ${file.name}`, 'error');
+  } finally {
+    processingIndicator.style.display = 'none';
+  }
+};
+
 export const updateSelectionDisplay = () => {
   selectionDisplay.innerHTML = '';
 
   // Create a map to track filename occurrences
   const fileNameCounts = {};
-  selectedFiles.forEach((file) => {
-    const fileName = file.name;
+  selectedFiles.forEach((fileInfo) => {
+    const fileName = fileInfo.name;
     fileNameCounts[fileName] = (fileNameCounts[fileName] || 0) + 1;
   });
 
   // Display selected files
-  selectedFiles.forEach((file, filePath) => {
+  selectedFiles.forEach((fileInfo, filePath) => {
+    // Check if fileInfo is valid
+    if (!fileInfo || !fileInfo.name) {
+      return; // Skip invalid files
+    }
+
     const div = document.createElement('div');
     div.classList.add('selection-item');
 
-    const fileIcon = getFileIcon(file);
-    let displayName = file.name;
+    const fileIcon = getFileIcon(fileInfo);
+    let displayName = fileInfo.name;
 
     // Show full path if duplicate filenames exist
-    if (fileNameCounts[file.name] > 1) {
-      displayName = file.filePath;
+    if (fileNameCounts[fileInfo.name] > 1) {
+      displayName = fileInfo.filePath;
     }
 
     const span = document.createElement('span');
@@ -223,7 +258,7 @@ export const updateSelectionDisplay = () => {
     div.classList.add('selection-item');
     const removeAllBtn = document.createElement('button');
     removeAllBtn.textContent = 'Remove All';
-    removeAllBtn.classList.add('delete-btn');
+    removeAllBtn.classList.add('remove-all-btn', 'btn', 'waves-effect', 'waves-light');
     removeAllBtn.addEventListener('click', () => {
       selectedFiles.clear();
       selectedURLs.clear();
@@ -240,9 +275,9 @@ export const updateSelectionDisplay = () => {
   }
 };
 
-const getFileIcon = (file) => {
-  const name = file.name.toLowerCase();
-  const type = file.type;
+const getFileIcon = (fileInfo) => {
+  const name = fileInfo.name.toLowerCase();
+  const type = fileInfo.type;
 
   if (type.includes('pdf')) {
     return '📄'; // PDF file
@@ -258,56 +293,6 @@ const getFileIcon = (file) => {
     return '📄'; // Plain text file
   } else {
     return '❓'; // Unknown file type
-  }
-};
-
-const processFile = async (file) => {
-  processingIndicator.textContent = `Processing "${file.name}"...`;
-  processingIndicator.style.display = 'block';
-  try {
-    const content = await readFile(file);
-    if (content !== null) {
-      outputContents.set(file.filePath, content);
-      selectedFiles.set(file.filePath, file);
-      updateSelectionDisplay();
-      updateOutputArea();
-      showNotification(`Processed file: ${file.name}`, 'success');
-      addLogEntry(`Processed file: ${file.filePath}`, 'success');
-    } else {
-      showNotification(`Unsupported file type: ${file.name}`, 'error');
-      addLogEntry(`Unsupported file type: ${file.name}`, 'error');
-    }
-  } catch (error) {
-    console.error(error);
-    showNotification(`Error processing file: ${file.name}`, 'error');
-    addLogEntry(`Error processing file: ${file.name}`, 'error');
-  } finally {
-    processingIndicator.style.display = 'none';
-  }
-};
-
-const processURL = async (url) => {
-  processingIndicator.textContent = `Fetching "${url}"...`;
-  processingIndicator.style.display = 'block';
-  try {
-    const content = await fetchURLContent(url);
-    if (content !== null) {
-      outputContents.set(url, content);
-      selectedURLs.set(url, url);
-      updateSelectionDisplay();
-      updateOutputArea();
-      showNotification(`Fetched content from URL: ${url}`, 'success');
-      addLogEntry(`Fetched content from URL: ${url}`, 'success');
-    } else {
-      showNotification(`Failed to fetch URL: ${url}`, 'error');
-      addLogEntry(`Failed to fetch URL: ${url}`, 'error');
-    }
-  } catch (error) {
-    console.error(error);
-    showNotification(`Error fetching URL: ${url}`, 'error');
-    addLogEntry(`Error fetching URL: ${url}`, 'error');
-  } finally {
-    processingIndicator.style.display = 'none';
   }
 };
 
@@ -370,4 +355,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
-

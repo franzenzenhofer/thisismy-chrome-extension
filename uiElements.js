@@ -17,3 +17,6 @@ export const selectLink = document.querySelector('.select-link');
 export const getCurrentUrlBtn = document.getElementById('get-current-url-btn');
 export const getCurrentPageContentBtn = document.getElementById('get-current-page-content-btn');
 export const getSelectedContentBtn = document.getElementById('get-selected-content-btn');
+
+export const importBtn = document.getElementById('import-briefing');
+export const exportBtn = document.getElementById('export-briefing');

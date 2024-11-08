@@ -176,6 +176,29 @@ body {
   margin-top: 10px;
 }
 
+.actions .btn {
+  margin: 5px;
+}
+
+/* Import/Export Section */
+.import-export {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.import-export .btn {
+  margin: 5px;
+}
+
+/* "Remove All" Button Styling */
+.remove-all-btn {
+  font-size: 12px;
+  padding: 4px 8px;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 /* Separator Line */
 hr {
   margin: 20px 0;

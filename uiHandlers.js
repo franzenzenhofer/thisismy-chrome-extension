@@ -17,6 +17,8 @@ import {
   getCurrentPageContentBtn,
   getSelectedContentBtn,
   processingIndicator,
+  importBtn,
+  exportBtn,
 } from './uiElements.js';
 import {
   selectedFiles,
@@ -30,6 +32,8 @@ import {
   addNote,
   updateSelectionDisplay,
 } from './main.js';
+import { importBriefing, exportBriefing } from './importexport.js';
+
 
 export const initializeEventListeners = () => {
   // Event Listeners
@@ -46,6 +50,48 @@ export const initializeEventListeners = () => {
       e.preventDefault();
       dropzone.classList.remove('dragover');
       handleDrop(e);
+    });
+
+  
+  
+
+  });
+
+
+  exportBtn.addEventListener('click', () => {
+    exportBtn.disabled = true;
+    exportBtn.textContent = 'Exporting...';
+    exportBriefing();
+    // Re-enable the button after 5 seconds or when the download starts
+    setTimeout(() => {
+      exportBtn.disabled = false;
+      exportBtn.textContent = 'Export';
+    }, 5000);
+  });
+
+  importBtn.addEventListener('click', () => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'application/json';
+    fileInput.click();
+    fileInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        importBtn.disabled = true;
+        importBtn.textContent = 'Importing...';
+        importBriefing(file)
+          .catch((error) => {
+            console.error('Error during import:', error);
+            showNotification('Import failed.', 'error');
+            addLogEntry(`Import failed: ${error.message}`, 'error');
+          })
+          .finally(() => {
+            importBtn.disabled = false;
+            importBtn.textContent = 'Import';
+          });
+      } else {
+        showNotification('No file selected for import.', 'error');
+      }
     });
   });
 
