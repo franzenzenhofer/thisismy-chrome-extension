@@ -159,3 +159,37 @@ export const isUnsupportedFile = (file) => {
 
   return false;
 };
+
+
+export function getFormattedDateTime() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hour = String(now.getHours()).padStart(2, '0');
+  const minute = String(now.getMinutes()).padStart(2, '0');
+  const second = String(now.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day}-${hour}-${minute}-${second}`;
+}
+
+// Include getFileIcon function
+export const getFileIcon = (fileInfo) => {
+  const name = fileInfo.name.toLowerCase();
+  const type = fileInfo.type;
+
+  if (type.includes('pdf')) {
+    return '📄'; // PDF file
+  } else if (type.includes('wordprocessingml') || name.endsWith('.doc') || name.endsWith('.docx')) {
+    return '📄'; // Word document
+  } else if (type.includes('json') || name.endsWith('.json')) {
+    return '🔧'; // JSON file
+  } else if (type.includes('xml') || name.endsWith('.xml')) {
+    return '🔖'; // XML file
+  } else if (type.includes('csv') || name.endsWith('.csv')) {
+    return '📊'; // CSV file
+  } else if (type.includes('text') || name.endsWith('.txt') || name.endsWith('.md') || name.endsWith('.log')) {
+    return '📄'; // Plain text file
+  } else {
+    return '❓'; // Unknown file type
+  }
+};

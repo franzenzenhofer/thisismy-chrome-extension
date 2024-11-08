@@ -1,9 +1,19 @@
 // importexport.js
 
-import { outputContents, updateOutputArea, updateSelectionDisplay } from './main.js';
+import {
+  outputContents,
+  updateOutputArea,
+  selectionOrder,
+  selectedFiles,
+  selectedURLs,
+  selectedNotes,
+  selectedSpecials,
+} from './main.js';
 import { showNotification } from './notifications.js';
 import { addLogEntry } from './logger.js';
-import { selectedFiles, selectedURLs, selectedNotes, selectedSpecials } from './main.js';
+import { updateSelectionDisplay } from './selectionlist.js';
+import { isUnsupportedFile, getFileIcon, getFormattedDateTime } from './utils.js';
+
 
 export const exportBriefing = () => {
   try {
@@ -13,6 +23,7 @@ export const exportBriefing = () => {
       selectedNotes: Array.from(selectedNotes.entries()),
       selectedSpecials: Array.from(selectedSpecials.entries()),
       outputContents: Array.from(outputContents.entries()),
+      selectionOrder: Array.from(selectionOrder),
     };
 
     const jsonString = JSON.stringify(briefingData, null, 2);
@@ -40,12 +51,33 @@ export const importBriefing = async (file) => {
     const text = await file.text();
     const briefingData = JSON.parse(text);
 
+    // Clear existing data
+    selectedFiles.clear();
+    selectedURLs.clear();
+    selectedNotes.clear();
+    selectedSpecials.clear();
+    outputContents.clear();
+    selectionOrder.length = 0;
+
     // Merge data with existing selections
-    briefingData.selectedFiles?.forEach(([key, value]) => selectedFiles.set(key, value));
-    briefingData.selectedURLs?.forEach(([key, value]) => selectedURLs.set(key, value));
-    briefingData.selectedNotes?.forEach(([key, value]) => selectedNotes.set(key, value));
-    briefingData.selectedSpecials?.forEach(([key, value]) => selectedSpecials.set(key, value));
-    briefingData.outputContents?.forEach(([key, value]) => outputContents.set(key, value));
+    briefingData.selectedFiles?.forEach(([key, value]) => {
+      selectedFiles.set(key, value);
+    });
+    briefingData.selectedURLs?.forEach(([key, value]) => {
+      selectedURLs.set(key, value);
+    });
+    briefingData.selectedNotes?.forEach(([key, value]) => {
+      selectedNotes.set(key, value);
+    });
+    briefingData.selectedSpecials?.forEach(([key, value]) => {
+      selectedSpecials.set(key, value);
+    });
+    briefingData.outputContents?.forEach(([key, value]) => {
+      outputContents.set(key, value);
+    });
+    briefingData.selectionOrder?.forEach((key) => {
+      selectionOrder.push(key);
+    });
 
     updateSelectionDisplay();
     updateOutputArea();
@@ -59,13 +91,4 @@ export const importBriefing = async (file) => {
   }
 };
 
-function getFormattedDateTime() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth()+1).padStart(2,'0');
-  const day = String(now.getDate()).padStart(2,'0');
-  const hour = String(now.getHours()).padStart(2,'0');
-  const minute = String(now.getMinutes()).padStart(2,'0');
-  const second = String(now.getSeconds()).padStart(2,'0');
-  return `${year}-${month}-${day}-${hour}-${minute}-${second}`;
-}
+

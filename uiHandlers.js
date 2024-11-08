@@ -30,10 +30,10 @@ import {
   addFile,
   addURL,
   addNote,
-  updateSelectionDisplay,
+
 } from './main.js';
 import { importBriefing, exportBriefing } from './importexport.js';
-
+import {  updateSelectionDisplay, } from './selectionlist.js';
 
 export const initializeEventListeners = () => {
   // Event Listeners

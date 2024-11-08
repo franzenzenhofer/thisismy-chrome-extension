@@ -1,16 +1,16 @@
 // selectionlist.js
 
-import { 
-    selectedFiles, 
-    selectedURLs, 
-    selectedNotes, 
-    selectedSpecials, 
-    outputContents, 
+import {
+    selectedFiles,
+    selectedURLs,
+    selectedNotes,
+    selectedSpecials,
+    outputContents,
     updateOutputArea,
     selectionOrder
   } from './main.js';
   import { selectionDisplay } from './uiElements.js';
-  import { isUnsupportedFile, getFileIcon } from './utils.js';
+  import { isUnsupportedFile, getFileIcon, getFormattedDateTime } from './utils.js';
   import { showNotification } from './notifications.js';
   import { addLogEntry } from './logger.js';
   
