@@ -99,51 +99,69 @@ body {
 /* Selection Display */
 .selection-display {
   min-height: 50px;
-  margin-bottom: 20px;
+  margin-bottom: 10px; /* Reduced from 20px to 10px */
 }
 
 .selection-item {
   display: flex;
-  align-items: center;
+  align-items: left;
   justify-content: space-between;
-  padding: 15px 10px; /* Increased padding for larger hit area */
-  white-space: pre-wrap;
+  padding: 10px 5px; /* Reduced padding from 15px 10px to 10px 5px */
   word-wrap: break-word;
   text-overflow: ellipsis;
   overflow: hidden;
   cursor: grab;
   transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+  
+  /* New additions to ensure delete button is always visible */
+  position: relative;
+  padding-right: 30px; /* Adds space on the right for the delete button */
 }
 
 .selection-item.dragging {
   opacity: 0.5;
   cursor: grabbing;
-
 }
 
 .selection-item.over {
   background-color: #e0f7fa; /* Light cyan background when over */
   border: 2px dashed #2196F3;
-
 }
 
+/* Increased icon size */
 .selection-item .icon {
   margin-right: 5px;
+  font-size: 18px; /* Increased from default to 18px */
 }
 
+/* Updated span to prevent overlap with delete button */
 .selection-item span {
   display: flex;
   align-items: center;
+  flex: 1; /* Ensures the span takes up available space */
+  font-size: 16px; /* Increased from default to 16px */
+  margin-right: 10px; /* Adds space between text and delete button */
+  padding-right: 30px; /* Prevents text from overlapping delete button */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.delete-btn {
+/* Position the delete button absolutely within the selection-item */
+.selection-item .delete-btn {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 18px; /* Increased from 16px to 18px for better visibility */
+  z-index: 10; /* Ensure it stays above other content */
+  flex-shrink: 0; /* Prevent the button from shrinking */
 }
 
-.delete-btn:hover {
+.selection-item .delete-btn:hover {
   color: #c62828;
 }
 
@@ -215,12 +233,15 @@ body {
   text-align: center;
 }
 
-#get-current-url-btn {
-display: none;
+#import-briefing, #export-briefing, #store-briefing {
+  margin: 5px;
 }
 
-.import-export .btn {
-  margin: 5px;
+#stored-briefings {
+  width: 100%;
+  max-width: 300px;
+  margin: 10px auto;
+  display: block;
 }
 
 /* "Remove All" Button Styling */
@@ -232,6 +253,7 @@ display: none;
   align-items: center;
   justify-content: center;
 }
+
 /* Separator Line */
 hr {
   margin: 20px 0;
@@ -263,12 +285,7 @@ hr {
   cursor: move;
 }
 
-
 /* Style for stored briefings dropdown */
-#import-briefing, #export-briefing, #store-briefing {
-  margin: 5px;
-}
-
 #stored-briefings {
   width: 100%;
   max-width: 300px;

@@ -57,14 +57,41 @@ export const initializeChatGPTButton = () => {
                     if (textarea.contentEditable === 'true') {
                       // Remove any existing content
                       textarea.innerHTML = '';
-                      // Split the content by <br> and insert as separate text nodes
-                      const lines = outputContent.split('<br>');
-                      lines.forEach((line, index) => {
-                        if (index > 0) {
-                          textarea.appendChild(document.createElement('br'));
-                        }
-                        textarea.appendChild(document.createTextNode(line));
-                      });
+
+                      // Convert the outputContent into HTML
+                      const escapeHtml = (unsafe) => {
+                        return unsafe.replace(/[&<>"']/g, function(m) {
+                          switch (m) {
+                            case '&':
+                              return '&amp;';
+                            case '<':
+                              return '&lt;';
+                            case '>':
+                              return '&gt;';
+                            case '"':
+                              return '&quot;';
+                            case "'":
+                              return '&#039;';
+                            default:
+                              return m;
+                          }
+                        });
+                      };
+
+                      const convertTextToHtml = (text) => {
+                        // Escape HTML special characters
+                        text = escapeHtml(text);
+
+                        // Replace multiple newlines with paragraph breaks
+                        const html = text
+                          .split('\n\n')
+                          .map((paragraph) => '<p>' + paragraph.replace(/\n/g, '<br>') + '</p><br>')
+                          .join('');
+
+                        return html;
+                      };
+
+                      textarea.innerHTML = convertTextToHtml(outputContent);
 
                       // Move cursor to the beginning
                       const selection = window.getSelection();
@@ -78,14 +105,13 @@ export const initializeChatGPTButton = () => {
                       textarea.scrollTop = 0;
                     } else if (textarea.tagName.toLowerCase() === 'textarea') {
                       // For textarea elements
-                      textarea.value = outputContent.replace(/<br>/g, '\n');
+                      textarea.value = outputContent;
                       textarea.focus();
                       textarea.setSelectionRange(0, 0);
 
                       // Scroll to the top
                       textarea.scrollTop = 0;
                     }
-
                   } else if (attemptsLeft > 0) {
                     // If not found, wait 2.5 seconds and try again
                     setTimeout(() => {
@@ -121,7 +147,10 @@ export const initializeChatGPTButton = () => {
               if (chrome.runtime.lastError) {
                 console.error('Error injecting script: ', chrome.runtime.lastError);
                 showNotification('Failed to inject content into ChatGPT.', 'error');
-                addLogEntry(`Failed to inject content into ChatGPT: ${chrome.runtime.lastError.message}`, 'error');
+                addLogEntry(
+                  `Failed to inject content into ChatGPT: ${chrome.runtime.lastError.message}`,
+                  'error'
+                );
               } else {
                 showNotification('Content sent to ChatGPT.', 'success');
                 addLogEntry('Content sent to ChatGPT.', 'success');
