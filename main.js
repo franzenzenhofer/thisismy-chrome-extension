@@ -7,6 +7,7 @@ import { readFile } from './fileProcessor.js';
 import { fetchURLContent } from './urlProcessor.js';
 import { updateSelectionDisplay } from './selectionlist.js';
 import { importBriefing } from './importexport.js';
+import { initializeStoredBriefings } from './storeBriefings.js';
 import {
   notification,
   logContainer,
@@ -26,10 +27,10 @@ import {
   getSelectedContentBtn,
   removeWhitespacesCheckbox,
 } from './uiElements.js';
-import { isUnsupportedFile, getFileIcon, getFormattedDateTime } from './utils.js';
 
 // Import shared state variables
 import { selectedFiles, selectedURLs, selectedNotes, selectedSpecials, outputContents, selectionOrder } from './state.js';
+import { isUnsupportedFile } from './utils.js';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'libs/pdf.worker.js';
 initializeEventListeners();
@@ -207,3 +208,10 @@ const importBriefingFromURL = async (url) => {
     addLogEntry(`Failed to import briefing from URL: ${error.message}`, 'error');
   }
 };
+
+// Import the ChatGPT functionality
+import { initializeChatGPTButton } from './copyIntoChatGpt.js';
+
+initializeChatGPTButton();
+
+initializeStoredBriefings();

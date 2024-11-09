@@ -73,19 +73,52 @@
       <div class="center-align">
         <a id="copy-output" class="btn waves-effect waves-light">Copy</a>
         <a id="save-output" class="btn waves-effect waves-light">Download</a>
+        <a id="chatgpt-output" class="btn waves-effect waves-light">ChatGPT</a>
       </div>
     </div>
 
     <!-- Separator Line -->
     <hr>
-
-    <!-- Import/Export Section -->
-<div class="import-export">
-  <div class="center-align">
-    <a id="import-briefing" class="btn waves-effect waves-light">Import</a>
-    <a id="export-briefing" class="btn waves-effect waves-light">Export</a>
+<h6>Briefing Manager</h6>
+  <!-- Import/Export Section -->
+  <div class="import-export">
+    <div class="center-align">
+      <a id="import-briefing" class="btn waves-effect waves-light">Import</a>
+      <a id="export-briefing" class="btn waves-effect waves-light">Export</a>
+      <a id="store-briefing" class="btn waves-effect waves-light">Store</a>
+    </div>
+    <div class="center-align">
+      <select id="stored-briefings" class="browser-default" style="display: none; margin-top: 10px;">
+        <option value="">Select Stored Briefing</option>
+      </select>
+    </div>
   </div>
-</div>
+
+    <!-- Briefing Name Popover -->
+    <div id="briefing-name-popover" class="popover" style="display: none;">
+      <div class="card-panel">
+        <h6>Name Your Briefing</h6>
+        <div class="input-field">
+          <input type="text" id="briefing-name-input">
+        </div>
+        <div class="center-align">
+          <a id="briefing-name-save-btn" class="btn waves-effect waves-light">Save</a>
+          <a id="briefing-name-cancel-btn" class="btn-flat">Cancel</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Briefing Actions Popover -->
+    <div id="briefing-actions-popover" class="popover" style="display: none;">
+      <div class="card-panel">
+        <h6>What would you like to do?</h6>
+        <div class="center-align">
+          <a id="briefing-load-btn" class="btn waves-effect waves-light">Load</a>
+          <a id="briefing-delete-btn" class="btn waves-effect waves-light red">Delete</a>
+          <a id="briefing-cancel-btn" class="btn-flat">Cancel</a>
+        </div>
+      </div>
+    </div>
 
 
 <!-- Separator Line -->

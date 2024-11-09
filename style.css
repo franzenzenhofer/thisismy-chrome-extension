@@ -195,12 +195,18 @@ body {
   gap: 5px;
 }
 
+/* Updated to ensure buttons fit on one line */
 .actions .center-align {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
   margin-top: 10px;
 }
 
 .actions .btn {
   margin: 5px;
+  flex-shrink: 0;
 }
 
 /* Import/Export Section */
@@ -255,4 +261,39 @@ hr {
 /* Optional: Change cursor when dragging over items */
 .selection-item.over {
   cursor: move;
+}
+
+
+/* Style for stored briefings dropdown */
+#import-briefing, #export-briefing, #store-briefing {
+  margin: 5px;
+}
+
+#stored-briefings {
+  width: 100%;
+  max-width: 300px;
+  margin: 10px auto;
+  display: block;
+}
+
+/* Popover Styles */
+.popover {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  width: 100%; /* Take 100% of the width */
+}
+
+.popover .card-panel {
+  padding: 20px;
+}
+
+.popover h6 {
+  margin-top: 0;
+}
+
+.popover .input-field {
+  margin-bottom: 20px;
 }
