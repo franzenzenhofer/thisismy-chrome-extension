@@ -1,5 +1,7 @@
 /* style.css */
 
+#get-current-url-btn { display: none;}
+ 
 /* General */
 body {
   background-color: #fafafa;
@@ -21,7 +23,7 @@ body {
 }
 
 .app-icon {
-  width: 40px; /* Adjusted size for smaller viewports */
+  width: 40px;
   height: 40px;
   margin-right: 10px;
 }
@@ -46,13 +48,13 @@ body {
 }
 
 .author-link {
-  color: #2196F3; /* Materialize primary color */
+  color: #2196F3;
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .author-link:hover {
-  color: #1976D2; /* Darker shade on hover */
+  color: #1976D2;
   text-decoration: underline;
 }
 
@@ -99,76 +101,85 @@ body {
 /* Selection Display */
 .selection-display {
   min-height: 50px;
-  margin-bottom: 10px; /* Reduced from 20px to 10px */
+  margin-bottom: 10px;
 }
 
-.selection-item {
-  display: flex;
-  align-items: left;
-  justify-content: space-between;
-  padding: 10px 5px; /* Reduced padding from 15px 10px to 10px 5px */
-  word-wrap: break-word;
-  text-overflow: ellipsis;
-  overflow: hidden;
+/* Selection Table */
+.selection-table {
+  width: 100%;
+  border-collapse: collapse;
+  padding: -24px;
+}
+
+.selection-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.selection-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.selection-table tr:hover {
+  background-color: #ddd;
+}
+
+.selection-table tr.selection-item {
   cursor: grab;
   transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
-  
-  /* New additions to ensure delete button is always visible */
-  position: relative;
-  padding-right: 30px; /* Adds space on the right for the delete button */
 }
 
-.selection-item.dragging {
+.selection-table tr.selection-item.dragging {
   opacity: 0.5;
   cursor: grabbing;
 }
 
-.selection-item.over {
-  background-color: #e0f7fa; /* Light cyan background when over */
+.selection-table tr.selection-item.over {
+  background-color: #e0f7fa;
   border: 2px dashed #2196F3;
 }
 
-/* Increased icon size */
-.selection-item .icon {
-  margin-right: 5px;
-  font-size: 18px; /* Increased from default to 18px */
+.selection-table .icon-cell {
+  width: 30px;
+  text-align: center;
 }
 
-/* Updated span to prevent overlap with delete button */
-.selection-item span {
-  display: flex;
-  align-items: center;
-  flex: 1; /* Ensures the span takes up available space */
-  font-size: 16px; /* Increased from default to 16px */
-  margin-right: 10px; /* Adds space between text and delete button */
-  padding-right: 30px; /* Prevents text from overlapping delete button */
+.selection-table .icon-cell .icon {
+  font-size: 18px;
+}
+
+.selection-table .text-cell {
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: pre-wrap; /* Allows wrapping */
+  word-wrap: break-word; /* Breaks words if necessary */
+  word-break: break-all; /* Ensures words break to fit within the container */
 }
 
-/* Position the delete button absolutely within the selection-item */
-.selection-item .delete-btn {
-  position: absolute;
-  right: 5px;
-  top: 50%;
-  transform: translateY(-50%);
+.selection-table .delete-cell {
+  width: 30px;
+  text-align: center;
+}
+
+.selection-table .delete-btn {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 18px; /* Increased from 16px to 18px for better visibility */
-  z-index: 10; /* Ensure it stays above other content */
-  flex-shrink: 0; /* Prevent the button from shrinking */
+  font-size: 18px;
 }
 
-.selection-item .delete-btn:hover {
+.selection-table .delete-btn:hover {
   color: #c62828;
 }
 
-.separator {
-  border: none;
-  border-top: 1px solid #ccc;
-  margin: 5px 0;
+/* Remove All Button Cell */
+.selection-table .remove-all-cell {
+  text-align: center;
+  padding: 10px;
+}
+
+.selection-table .remove-all-btn {
+
 }
 
 /* Processing Indicator */
@@ -190,7 +201,7 @@ body {
   word-wrap: break-word;
 }
 
-/* Add word-wrap to the output */
+/* Output */
 .output {
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -213,7 +224,6 @@ body {
   gap: 5px;
 }
 
-/* Updated to ensure buttons fit on one line */
 .actions .center-align {
   display: flex;
   flex-wrap: nowrap;
@@ -233,7 +243,9 @@ body {
   text-align: center;
 }
 
-#import-briefing, #export-briefing, #store-briefing {
+#import-briefing,
+#export-briefing,
+#store-briefing {
   margin: 5px;
 }
 
@@ -242,16 +254,6 @@ body {
   max-width: 300px;
   margin: 10px auto;
   display: block;
-}
-
-/* "Remove All" Button Styling */
-.remove-all-btn {
-  font-size: 12px;
-  padding: 4px 8px;
-  margin-top: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* Separator Line */
@@ -267,30 +269,13 @@ hr {
 .log-content {
   max-height: 200px;
   overflow-y: auto;
-  display: none; /* Hide by default */
+  display: none;
 }
 
+/* Top Controls */
 .top-controls a {
   margin-right: 5px;
   margin-bottom: 5px;
-}
-
-/* Ensure cursor remains pointer over delete button */
-.selection-item .delete-btn {
-  cursor: pointer;
-}
-
-/* Optional: Change cursor when dragging over items */
-.selection-item.over {
-  cursor: move;
-}
-
-/* Style for stored briefings dropdown */
-#stored-briefings {
-  width: 100%;
-  max-width: 300px;
-  margin: 10px auto;
-  display: block;
 }
 
 /* Popover Styles */
@@ -300,7 +285,7 @@ hr {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 1000;
-  width: 100%; /* Take 100% of the width */
+  width: 100%;
 }
 
 .popover .card-panel {
