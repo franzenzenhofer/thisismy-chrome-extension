@@ -28,6 +28,9 @@ const GITHUB_RAW_BASE_URL = 'https://raw.githubusercontent.com/franzenzenhofer/t
 const USER_BRIEFINGS_KEY = 'storedBriefings';
 const PREPARED_BRIEFINGS_KEY = 'preparedBriefings';
 
+// Timeout settings for fetch requests (in milliseconds)
+const FETCH_TIMEOUT = 10000; // 10 seconds
+
 // Initialize stored briefings
 export const initializeStoredBriefings = () => {
   // Set up event listeners for user briefings
@@ -39,9 +42,15 @@ export const initializeStoredBriefings = () => {
   briefingDeleteBtn.addEventListener('click', () => handleBriefingAction('delete'));
   briefingCancelBtn.addEventListener('click', hideBriefingActionsPopover);
   
-  // Load both user and prepared briefings
+  // Load user briefings immediately
   loadUserBriefings();
-  loadPreparedBriefings();
+
+  // Load prepared briefings asynchronously without blocking the app
+  loadPreparedBriefings().catch((error) => {
+    console.error('Error loading prepared briefings:', error);
+    showNotification('Failed to load prepared briefings.', 'error');
+    addLogEntry(`Failed to load prepared briefings: ${error.message}`, 'error');
+  });
 };
 
 // Variables to track selected briefing
@@ -72,30 +81,24 @@ const hideBriefingNamePopover = () => {
 
 // Store a user briefing in chrome.storage.local under 'storedBriefings'
 const storeUserBriefing = (name) => {
-  try {
-    const briefingData = {
-      selectedFiles: Array.from(selectedFiles.entries()),
-      selectedURLs: Array.from(selectedURLs.entries()),
-      selectedNotes: Array.from(selectedNotes.entries()),
-      selectedSpecials: Array.from(selectedSpecials.entries()),
-      outputContents: Array.from(outputContents.entries()),
-      selectionOrder: Array.from(selectionOrder),
-    };
+  const briefingData = {
+    selectedFiles: Array.from(selectedFiles.entries()),
+    selectedURLs: Array.from(selectedURLs.entries()),
+    selectedNotes: Array.from(selectedNotes.entries()),
+    selectedSpecials: Array.from(selectedSpecials.entries()),
+    outputContents: Array.from(outputContents.entries()),
+    selectionOrder: Array.from(selectionOrder),
+  };
 
-    chrome.storage.local.get({ [USER_BRIEFINGS_KEY]: {} }, (result) => {
-      const storedBriefings = result[USER_BRIEFINGS_KEY];
-      storedBriefings[name] = briefingData;
-      chrome.storage.local.set({ [USER_BRIEFINGS_KEY]: storedBriefings }, () => {
-        showNotification(`Briefing "${name}" stored successfully!`, 'success');
-        addLogEntry(`Briefing "${name}" stored successfully.`, 'success');
-        loadUserBriefings(); // Refresh the dropdown
-      });
+  chrome.storage.local.get({ [USER_BRIEFINGS_KEY]: {} }, (result) => {
+    const storedBriefings = result[USER_BRIEFINGS_KEY];
+    storedBriefings[name] = briefingData;
+    chrome.storage.local.set({ [USER_BRIEFINGS_KEY]: storedBriefings }, () => {
+      showNotification(`Briefing "${name}" stored successfully!`, 'success');
+      addLogEntry(`Briefing "${name}" stored successfully.`, 'success');
+      loadUserBriefings(); // Refresh the dropdown
     });
-  } catch (error) {
-    console.error('Error storing briefing:', error);
-    showNotification('Failed to store briefing.', 'error');
-    addLogEntry(`Failed to store briefing: ${error.message}`, 'error');
-  }
+  });
 };
 
 // Load user briefings from chrome.storage.local
@@ -107,50 +110,58 @@ const loadUserBriefings = () => {
   });
 };
 
-// Load prepared briefings from GitHub repository
+// Load prepared briefings from GitHub repository with timeout and error handling
 const loadPreparedBriefings = async () => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+
   try {
     const rootTxtUrl = `${GITHUB_RAW_BASE_URL}root.txt`;
-    const response = await fetch(rootTxtUrl);
+    const response = await fetch(rootTxtUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
       throw new Error(`Failed to fetch root.txt: ${response.status} ${response.statusText}`);
     }
+
     const rootTxt = await response.text();
     const briefingMap = parseRootTxt(rootTxt);
 
-    // Fetch all briefing JSON files listed in root.txt
-    const fetchedBriefings = {};
-    for (const [key, filename] of Object.entries(briefingMap)) {
+    // Fetch all briefing JSON files listed in root.txt concurrently
+    const fetchPromises = Object.entries(briefingMap).map(async ([key, filename]) => {
       const fileUrl = `${GITHUB_RAW_BASE_URL}briefings/${filename}`;
       try {
-        const fileResponse = await fetch(fileUrl);
+        const fileResponse = await fetchWithTimeout(fileUrl, FETCH_TIMEOUT);
         if (!fileResponse.ok) {
           throw new Error(`Failed to fetch ${filename}: ${fileResponse.status} ${fileResponse.statusText}`);
         }
         const briefingData = await fileResponse.json();
-        fetchedBriefings[key] = briefingData;
+        return { key, data: briefingData };
       } catch (fileError) {
         console.error(`Error fetching ${filename}:`, fileError);
         addLogEntry(`Error fetching ${filename}: ${fileError.message}`, 'error');
+        return null;
       }
-    }
+    });
+
+    const fetchedBriefingsArray = await Promise.all(fetchPromises);
+    const fetchedBriefings = fetchedBriefingsArray.reduce((acc, item) => {
+      if (item) acc[item.key] = item.data;
+      return acc;
+    }, {});
 
     // Update preparedBriefings in storage
     chrome.storage.local.get({ [PREPARED_BRIEFINGS_KEY]: {} }, (result) => {
       const currentPrepared = result[PREPARED_BRIEFINGS_KEY];
-      const updatedPrepared = {};
-
-      // Add or update fetched briefings
-      for (const [key, data] of Object.entries(fetchedBriefings)) {
-        updatedPrepared[key] = data;
-      }
+      const updatedPrepared = { ...currentPrepared, ...fetchedBriefings };
 
       // Identify and remove briefings that are no longer in the repo
-      for (const key of Object.keys(currentPrepared)) {
+      Object.keys(currentPrepared).forEach((key) => {
         if (!fetchedBriefings.hasOwnProperty(key)) {
           addLogEntry(`Removing outdated prepared briefing: ${key}`, 'info');
+          delete updatedPrepared[key];
         }
-      }
+      });
 
       chrome.storage.local.set({ [PREPARED_BRIEFINGS_KEY]: updatedPrepared }, () => {
         showNotification('Prepared briefings updated from GitHub.', 'success');
@@ -160,10 +171,25 @@ const loadPreparedBriefings = async () => {
       });
     });
   } catch (error) {
-    console.error('Error loading prepared briefings:', error);
-    showNotification('Failed to load prepared briefings.', 'error');
-    addLogEntry(`Failed to load prepared briefings: ${error.message}`, 'error');
+    if (error.name === 'AbortError') {
+      console.error('Request timed out while loading prepared briefings.');
+      addLogEntry('Request timed out while loading prepared briefings.', 'error');
+      showNotification('Loading prepared briefings timed out.', 'error');
+    } else {
+      console.error('Error loading prepared briefings:', error);
+      addLogEntry(`Failed to load prepared briefings: ${error.message}`, 'error');
+      showNotification('Failed to load prepared briefings.', 'error');
+    }
   }
+};
+
+// Fetch with timeout helper function
+const fetchWithTimeout = (url, timeout) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  return fetch(url, { signal: controller.signal })
+    .finally(() => clearTimeout(timeoutId));
 };
 
 // Parse root.txt into a key-filename map
@@ -254,28 +280,7 @@ const loadBriefing = (name, source) => {
       const briefingData = userBriefings[name];
       if (briefingData) {
         // Merge stored data with existing selections
-        briefingData.selectedFiles?.forEach(([key, value]) => {
-          selectedFiles.set(key, value);
-        });
-        briefingData.selectedURLs?.forEach(([key, value]) => {
-          selectedURLs.set(key, value);
-        });
-        briefingData.selectedNotes?.forEach(([key, value]) => {
-          selectedNotes.set(key, value);
-        });
-        briefingData.selectedSpecials?.forEach(([key, value]) => {
-          selectedSpecials.set(key, value);
-        });
-        briefingData.outputContents?.forEach(([key, value]) => {
-          outputContents.set(key, value);
-        });
-        briefingData.selectionOrder?.forEach((key) => {
-          // To avoid duplicate entries in selectionOrder
-          if (!selectionOrder.includes(key)) {
-            selectionOrder.push(key);
-          }
-        });
-
+        mergeBriefingData(briefingData);
         updateSelectionDisplay();
         updateOutputArea();
 
@@ -291,28 +296,7 @@ const loadBriefing = (name, source) => {
       const briefingData = preparedBriefings[name];
       if (briefingData) {
         // Merge prepared data with existing selections
-        briefingData.selectedFiles?.forEach(([key, value]) => {
-          selectedFiles.set(key, value);
-        });
-        briefingData.selectedURLs?.forEach(([key, value]) => {
-          selectedURLs.set(key, value);
-        });
-        briefingData.selectedNotes?.forEach(([key, value]) => {
-          selectedNotes.set(key, value);
-        });
-        briefingData.selectedSpecials?.forEach(([key, value]) => {
-          selectedSpecials.set(key, value);
-        });
-        briefingData.outputContents?.forEach(([key, value]) => {
-          outputContents.set(key, value);
-        });
-        briefingData.selectionOrder?.forEach((key) => {
-          // To avoid duplicate entries in selectionOrder
-          if (!selectionOrder.includes(key)) {
-            selectionOrder.push(key);
-          }
-        });
-
+        mergeBriefingData(briefingData);
         updateSelectionDisplay();
         updateOutputArea();
 
@@ -322,6 +306,37 @@ const loadBriefing = (name, source) => {
         showNotification(`Prepared Briefing "${name}" not found.`, 'error');
       }
     });
+  }
+};
+
+// Merge briefing data into the current state
+const mergeBriefingData = (briefingData) => {
+  try {
+    briefingData.selectedFiles?.forEach(([key, value]) => {
+      selectedFiles.set(key, value);
+    });
+    briefingData.selectedURLs?.forEach(([key, value]) => {
+      selectedURLs.set(key, value);
+    });
+    briefingData.selectedNotes?.forEach(([key, value]) => {
+      selectedNotes.set(key, value);
+    });
+    briefingData.selectedSpecials?.forEach(([key, value]) => {
+      selectedSpecials.set(key, value);
+    });
+    briefingData.outputContents?.forEach(([key, value]) => {
+      outputContents.set(key, value);
+    });
+    briefingData.selectionOrder?.forEach((key) => {
+      // To avoid duplicate entries in selectionOrder
+      if (!selectionOrder.includes(key)) {
+        selectionOrder.push(key);
+      }
+    });
+  } catch (error) {
+    console.error('Error merging briefing data:', error);
+    showNotification('Failed to load briefing data.', 'error');
+    addLogEntry(`Failed to load briefing data: ${error.message}`, 'error');
   }
 };
 
