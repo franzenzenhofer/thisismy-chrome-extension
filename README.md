@@ -1,7 +1,5 @@
 # thisismy by Franz Enzenhofer
 
-![Extension Icon](icons/icon-128.png)
-
 ## Overview
 
 **thisismy** is a powerful Google Chrome extension designed to streamline the processing of files and URLs. Whether you're managing notes, organizing briefings, or extracting readable content from web pages, this extension offers a suite of tools to enhance your productivity and workflow.
