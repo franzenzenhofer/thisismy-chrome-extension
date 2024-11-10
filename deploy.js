@@ -80,14 +80,14 @@ function updateLicenseDates() {
 
 // Update year in footer of sidepanel.html
 function updateFooterYear() {
-  const sidepanelPath = path.join(__dirname, 'sidepanel.html');
-  if (fs.existsSync(sidepanelPath)) {
-    let content = fs.readFileSync(sidepanelPath, 'utf8');
-    const yearRegex = /(&copy;\s*)(\d{4})/;
+  const footerPath = path.join(__dirname, 'sidepanel.html');
+  if (fs.existsSync(footerPath)) {
+    let content = fs.readFileSync(footerPath, 'utf8');
+    const yearRegex = /(&copy;\s*Franz Enzenhofer\s*)(\d{4})(\s*-\s*)/;
     const currentYear = new Date().getFullYear();
     if (content.match(yearRegex)) {
-      content = content.replace(yearRegex, `$1${currentYear}`);
-      fs.writeFileSync(sidepanelPath, content, 'utf8');
+      content = content.replace(yearRegex, `$1${currentYear}$3`);
+      fs.writeFileSync(footerPath, content, 'utf8');
       console.log(`Updated footer year in sidepanel.html to ${currentYear}`);
     } else {
       console.log('Footer year not found in sidepanel.html.');
