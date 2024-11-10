@@ -1,29 +1,27 @@
-Business Source License 1.1
+**Business Source License 1.1**
 
 This Business Source License (the "License") applies to the "thisismy: ChatGPT Briefing Maker" software (the "Software").
 
-## Terms
+**Terms**
 
-1. **Licensed Grant**: 
-   Franz Enzenhofer grants you the right to use, view, inspect, and learn from the Software for personal, educational, or non-commercial purposes. 
+1. **License Grant**:
+   - **Source Code**: Franz Enzenhofer grants you the right to view, inspect, and learn from the Software's source code for personal, educational, or non-commercial purposes.
+   - **Software Functionality**: You are permitted to use the compiled Software for any legal purpose, including commercial use, without restriction.
 
 2. **Usage Restrictions**:
-   You may not use the Software to create or distribute derivative, competitive, or similar products for commercial purposes during the License Term, as defined below.
+   - **Source Code**: You may not use the Software's source code to create or distribute derivative, competitive, or similar products for commercial purposes during the License Term, as defined below.
+   - **Organizational Use**: If more than 100 users within an organization utilize the Software, and the organization is aware of this usage, a commercial license must be obtained.
 
-3. **License Term**:
-   This License applies until the "Change Date," which is 2024-11-10.
+3. **License Term**: This License applies until the "Change Date," which is 2024-11-10.
 
-4. **Change License**:
-   On the Change Date, the License will automatically convert to the MIT License, granting full open-source rights, including commercial and derivative use, under the MIT License terms.
+4. **Change License**: On the Change Date, the License will automatically convert to the MIT License, granting full open-source rights, including commercial and derivative use, under the MIT License terms.
 
-5. **Attribution**:
-   Any permitted use of the Software must include appropriate attribution to the original author, Franz Enzenhofer, and link to the official repository at [https://github.com/franzenzenhofer/thisismy-chrome-extension](https://github.com/franzenzenhofer/thisismy-chrome-extension).
+5. **Attribution**: Any permitted use of the Software must include appropriate attribution to the original author, Franz Enzenhofer, and a link to the official repository at [https://github.com/franzenzenhofer/thisismy-chrome-extension](https://github.com/franzenzenhofer/thisismy-chrome-extension).
 
-6. **No Warranty**:
-   The Software is provided "as is," without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement. In no event shall the author be liable for any claim, damages, or other liability, arising from, out of, or in connection with the Software or its use.
+6. **No Warranty**: The Software is provided "as is," without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement. In no event shall the author be liable for any claim, damages, or other liability, arising from, out of, or in connection with the Software or its use.
 
-7. **Additional Information**:
-   For questions, please contact Franz Enzenhofer at fe@f19n.com.
+7. **Additional Information**: For questions, please contact Franz Enzenhofer at fe@f19n.com.
 
-Change Date: 2024-11-10
-Change License: MIT License
+**Change Date**: 2024-11-10
+
+**Change License**: MIT License

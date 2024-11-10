@@ -55,21 +55,41 @@ function updatePackageVersion(version) {
   console.log(`Updated package.json to version ${version}`);
 }
 
-// Update CHANGE_DATE_PLACEHOLDER in LICENSE
-function updateLicenseDate() {
+// Update dates in LICENSE file
+function updateLicenseDates() {
   const licensePath = path.join(__dirname, 'LICENSE');
   if (fs.existsSync(licensePath)) {
     let content = fs.readFileSync(licensePath, 'utf8');
+    const dateRegex = /(\*\*Change Date\*\*:\s*)(.*)/;
     const currentDate = new Date().toISOString().split('T')[0];
-    if (content.includes('CHANGE_DATE_PLACEHOLDER')) {
-      content = content.replace(/CHANGE_DATE_PLACEHOLDER/g, currentDate);
-      fs.writeFileSync(licensePath, content);
-      console.log(`Updated LICENSE with date ${currentDate}`);
+    if (content.match(dateRegex)) {
+      content = content.replace(dateRegex, `$1${currentDate}`);
+      fs.writeFileSync(licensePath, content, 'utf8');
+      console.log(`Updated Change Date in LICENSE to ${currentDate}`);
     } else {
-      console.log('CHANGE_DATE_PLACEHOLDER not found in LICENSE.');
+      console.log('Change Date not found in LICENSE.');
     }
   } else {
     console.log('LICENSE file not found.');
+  }
+}
+
+// Update year in footer of sidepanel.html
+function updateFooterYear() {
+  const sidepanelPath = path.join(__dirname, 'sidepanel.html');
+  if (fs.existsSync(sidepanelPath)) {
+    let content = fs.readFileSync(sidepanelPath, 'utf8');
+    const yearRegex = /(&copy;\s*)(\d{4})/;
+    const currentYear = new Date().getFullYear();
+    if (content.match(yearRegex)) {
+      content = content.replace(yearRegex, `$1${currentYear}`);
+      fs.writeFileSync(sidepanelPath, content, 'utf8');
+      console.log(`Updated footer year in sidepanel.html to ${currentYear}`);
+    } else {
+      console.log('Footer year not found in sidepanel.html.');
+    }
+  } else {
+    console.log('sidepanel.html file not found.');
   }
 }
 
@@ -90,7 +110,8 @@ function main() {
   try {
     const newVersion = updateManifestVersion();
     updatePackageVersion(newVersion);
-    updateLicenseDate();
+    updateLicenseDates();
+    updateFooterYear();
     deployToGitHub(newVersion);
   } catch (error) {
     console.error(`Deployment failed: ${error.message}`);
