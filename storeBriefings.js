@@ -116,20 +116,22 @@ const hideBriefingActionsPopover = () => {
   briefingActionsPopover.style.display = 'none';
 };
 
+// storeBriefings.js
+
 const loadBriefing = (name) => {
   chrome.storage.local.get({ storedBriefings: {} }, (result) => {
     const storedBriefings = result.storedBriefings;
     const briefingData = storedBriefings[name];
     if (briefingData) {
-      // Clear existing data
-      selectedFiles.clear();
-      selectedURLs.clear();
-      selectedNotes.clear();
-      selectedSpecials.clear();
-      outputContents.clear();
-      selectionOrder.length = 0;
+      // Removed the following lines to prevent clearing existing data
+      // selectedFiles.clear();
+      // selectedURLs.clear();
+      // selectedNotes.clear();
+      // selectedSpecials.clear();
+      // outputContents.clear();
+      // selectionOrder.length = 0;
 
-      // Load stored data
+      // Merge stored data with existing selections
       briefingData.selectedFiles?.forEach(([key, value]) => {
         selectedFiles.set(key, value);
       });
@@ -146,7 +148,10 @@ const loadBriefing = (name) => {
         outputContents.set(key, value);
       });
       briefingData.selectionOrder?.forEach((key) => {
-        selectionOrder.push(key);
+        // To avoid duplicate entries in selectionOrder
+        if (!selectionOrder.includes(key)) {
+          selectionOrder.push(key);
+        }
       });
 
       updateSelectionDisplay();
@@ -159,6 +164,7 @@ const loadBriefing = (name) => {
     }
   });
 };
+
 
 const deleteBriefing = (name) => {
   chrome.storage.local.get({ storedBriefings: {} }, (result) => {

@@ -45,18 +45,20 @@ export const exportBriefing = () => {
   }
 };
 
+// importexport.js
+
 export const importBriefing = async (file) => {
   try {
     const text = await file.text();
     const briefingData = JSON.parse(text);
 
-    // Clear existing data
-    selectedFiles.clear();
-    selectedURLs.clear();
-    selectedNotes.clear();
-    selectedSpecials.clear();
-    outputContents.clear();
-    selectionOrder.length = 0;
+    // Removed the following lines to prevent clearing existing data
+    // selectedFiles.clear();
+    // selectedURLs.clear();
+    // selectedNotes.clear();
+    // selectedSpecials.clear();
+    // outputContents.clear();
+    // selectionOrder.length = 0;
 
     // Merge data with existing selections
     briefingData.selectedFiles?.forEach(([key, value]) => {
@@ -75,7 +77,10 @@ export const importBriefing = async (file) => {
       outputContents.set(key, value);
     });
     briefingData.selectionOrder?.forEach((key) => {
-      selectionOrder.push(key);
+      // To avoid duplicate entries in selectionOrder
+      if (!selectionOrder.includes(key)) {
+        selectionOrder.push(key);
+      }
     });
 
     updateSelectionDisplay();
@@ -89,3 +94,4 @@ export const importBriefing = async (file) => {
     addLogEntry(`Failed to import briefing: ${error.message}`, 'error');
   }
 };
+

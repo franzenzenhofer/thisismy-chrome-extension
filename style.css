@@ -199,6 +199,7 @@ body {
   overflow-y: auto;
   white-space: pre-wrap;
   word-wrap: break-word;
+  margin-bottom: 5px;
 }
 
 /* Output */
@@ -299,3 +300,16 @@ hr {
 .popover .input-field {
   margin-bottom: 20px;
 }
+
+/* Token Count Display */
+#token-count-container {
+  font-size: 12px;
+  text-align: right;
+  margin-top: 0px; /* Optional: Adds some spacing above the token count */
+  margin-right: 5px;
+}
+
+#token-count {
+  font-weight: normal;
+}
+

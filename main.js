@@ -139,23 +139,30 @@ const processFile = async (file) => {
   }
 };
 
-export const updateOutputArea = () => {
-  let finalOutput = '';
-  selectionOrder.forEach((key) => {
-    const content = outputContents.get(key);
-    if (content) {
-      finalOutput += content + '\n';
-    }
-  });
-  if (removeWhitespacesCheckbox.checked) {
-    finalOutput = finalOutput.replace(/[\s\n]+/g, ' ').trim();
-  }
+export const updateOutputArea = () => {  
+  let finalOutput = '';  
+  selectionOrder.forEach((key) => {    
+    const content = outputContents.get(key);    
+    if (content) {      
+      finalOutput += content + '\n';    
+    }  
+  });  
+  if (removeWhitespacesCheckbox.checked) {    
+    finalOutput = finalOutput.replace(/[\s\n]+/g, ' ').trim();  
+  }  
   outputArea.textContent = finalOutput;
 
   const tokenCount = Math.ceil(finalOutput.length / 4);
 
-  copyBtn.title = `~${tokenCount} tokens`;
+  copyBtn.title = `~${tokenCount} tokens`;  
+
+  // Update token count display
+  const tokenCountSpan = document.getElementById('token-count');
+  if (tokenCountSpan) {
+    tokenCountSpan.textContent = tokenCount;
+  }
 };
+
 
 updateSelectionDisplay();
 
