@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "thisismy by Franz Enzenhofer",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "An extension that processes files and URLs",
   "permissions": [
     "sidePanel",
@@ -11,7 +11,9 @@
     "tabs",
     "contextMenus"
   ],
-  "host_permissions": ["<all_urls>"],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "action": {
     "default_title": "thisismy by Franz Enzenhofer"
   },
@@ -33,7 +35,9 @@
         "libs/mammoth.browser.min.js",
         "libs/Readability.js"
       ],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ],
   "content_security_policy": {

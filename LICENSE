@@ -11,7 +11,7 @@ This Business Source License (the "License") applies to the "thisismy: ChatGPT B
    You may not use the Software to create or distribute derivative, competitive, or similar products for commercial purposes during the License Term, as defined below.
 
 3. **License Term**:
-   This License applies until the "Change Date," which is CHANGE_DATE_PLACEHOLDER.
+   This License applies until the "Change Date," which is 2024-11-10.
 
 4. **Change License**:
    On the Change Date, the License will automatically convert to the MIT License, granting full open-source rights, including commercial and derivative use, under the MIT License terms.
@@ -25,5 +25,5 @@ This Business Source License (the "License") applies to the "thisismy: ChatGPT B
 7. **Additional Information**:
    For questions, please contact Franz Enzenhofer at fe@f19n.com.
 
-Change Date: CHANGE_DATE_PLACEHOLDER
+Change Date: 2024-11-10
 Change License: MIT License
