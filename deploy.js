@@ -6,12 +6,16 @@ const { execSync } = require('child_process');
 
 // Function to increment version numbers
 function incrementVersion(version) {
-  const parts = version.split('.').map(Number);
-  if (parts.length !== 3 || parts.some(isNaN)) {
-    throw new Error('Invalid version number format. Expected x.y.z');
+  const semverRegex = /^(\d+)\.(\d+)\.(\d+)(-.+)?$/;
+  const match = semverRegex.exec(version);
+  if (match) {
+    let [_, major, minor, patch, preRelease] = match;
+    patch = parseInt(patch) + 1; // Increment patch version
+    return `${major}.${minor}.${patch}${preRelease || ''}`;
+  } else {
+    // If version doesn't match x.y.z format, append .1
+    return `${version}.1`;
   }
-  parts[2] += 1; // Increment patch version
-  return parts.join('.');
 }
 
 // Update manifest.json version number
