@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const archiver = require('archiver'); // Ensure you install archiver via npm
 
 // Function to increment version numbers
 function incrementVersion(version) {
@@ -135,7 +136,7 @@ function updateFooterYear() {
         console.error(`Failed to write sidepanel.html: ${error.message}`);
       }
     } else {
-      console.log('Footer year not found or format is incorrect in sidepanel.html.');
+      console.log('Footer year not found in sidepanel.html.');
     }
   } else {
     console.log('sidepanel.html file not found.');
@@ -160,8 +161,60 @@ function deployToGitHub(version) {
   }
 }
 
+// Zip the extension files for distribution
+function zipExtensionFiles(version) {
+  return new Promise((resolve, reject) => {
+    const distDir = path.join(__dirname, 'dist');
+    if (!fs.existsSync(distDir)) {
+      fs.mkdirSync(distDir, { recursive: true });
+      console.log(`Created directory: ${distDir}`);
+    }
+
+    const output = fs.createWriteStream(path.join(distDir, `thisismy-${version}.zip`));
+    const archive = archiver('zip', {
+      zlib: { level: 9 } // Maximum compression
+    });
+
+    output.on('close', () => {
+      console.log(`Zipped ${archive.pointer()} total bytes`);
+      console.log(`Created archive: dist/thisismy-${version}.zip`);
+      resolve();
+    });
+
+    archive.on('error', (err) => {
+      console.error(`Archiving failed: ${err.message}`);
+      reject(err);
+    });
+
+    archive.pipe(output);
+
+    // Append files and folders, excluding ignored ones
+    archive.glob('**/*', {
+      cwd: __dirname,
+      ignore: [
+        'dist/**',
+        'node_modules/**',
+        '*.log',
+        '.git/**',
+        '**/.*',          // Ignore all dot files and directories
+        'deploy.js',      // Specifically ignore deploy.js
+        '.thisismyignore',
+        '.gitignore',
+        'test/**',
+        'logs/**',
+        'libs/**',
+        'icons/**/.DS_Store',
+        'testfolder/**',
+        '*.zip'
+      ]
+    });
+
+    archive.finalize();
+  });
+}
+
 // Main function
-function main() {
+async function main() {
   try {
     const newVersion = updateManifestVersion();
     if (!newVersion) {
@@ -171,6 +224,7 @@ function main() {
     updatePackageVersion(newVersion);
     updateLicenseDates();
     updateFooterYear();
+    await zipExtensionFiles(newVersion); // Zip the files after updates
     deployToGitHub(newVersion);
   } catch (error) {
     console.error(`Deployment failed: ${error.message}`);
