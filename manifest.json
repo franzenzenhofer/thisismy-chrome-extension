@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "thisismy by Franz Enzenhofer",
-  "version": "1.2.10",
+  "version": "1.2.11",
   "description": "An extension that processes files and URLs",
   "permissions": [
     "sidePanel",
