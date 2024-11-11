@@ -107,7 +107,7 @@ export const parseIgnoreFile = (content) => {
 
 // Function to convert gitignore pattern to RegExp
 const gitignorePatternToRegExp = (pattern) => {
-  // Escape regex special characters except for *, ?, and /.
+  // Escape regex special characters except for *, ?, and /
   let escaped = pattern.replace(/([.+^=!:${}()|[\]\\])/g, '\\$1');
 
   // Handle '**' (matches any number of characters, including '/')
@@ -119,15 +119,27 @@ const gitignorePatternToRegExp = (pattern) => {
   // Handle '?' (matches any single character except '/')
   escaped = escaped.replace(/\\\?/g, '[^/]');
 
-  // Now, construct the regex
+  // Construct the regex
   let regexString = '';
 
-  if (pattern.startsWith('/')) {
-    // For patterns starting with '/', match the pattern as a path segment anywhere in the path
-    regexString = '.*' + escaped + '(/|$)';
+  if (pattern.endsWith('/')) {
+    // If pattern ends with '/', ignore the directory and all its contents
+    if (pattern.startsWith('/')) {
+      // Absolute path
+      regexString = '^' + escaped + '.*';
+    } else {
+      // Relative path
+      regexString = '(^|/)' + escaped + '.*';
+    }
   } else {
-    // For other patterns, match as a path segment anywhere in the path
-    regexString = '(^|/)' + escaped + '(/|$)';
+    // Patterns not ending with '/'
+    if (pattern.startsWith('/')) {
+      // Absolute path
+      regexString = '^' + escaped + '(/|$)';
+    } else {
+      // Relative path
+      regexString = '(^|/)' + escaped + '(/|$)';
+    }
   }
 
   return new RegExp(regexString);

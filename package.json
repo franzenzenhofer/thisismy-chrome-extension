@@ -1,6 +1,6 @@
 {
   "name": "thisismy-chrome-extension",
-  "version": "1.2.9",
+  "version": "1.2.10",
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
