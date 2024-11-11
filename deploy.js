@@ -202,10 +202,10 @@ function zipExtensionFiles(version) {
         '.gitignore',
         'test/**',
         'logs/**',
-        'libs/**',
         'icons/**/.DS_Store',
         'testfolder/**',
-        '*.zip'
+        '*.zip',
+        '.DS_Store'
       ]
     });
 
