@@ -55,8 +55,6 @@ const unsupportedMimeTypes = [
   'application/gzip',
 
   // Unsupported Office Documents
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-powerpoint',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 
@@ -85,7 +83,7 @@ const unsupportedFileExtensions = [
   '.zip', '.rar', '.7z', '.tar', '.gz',
 
   // Unsupported Office Documents
-  '.xls', '.xlsx', '.ppt', '.pptx',
+ '.ppt', '.pptx',
 
   // Others
   '.rtf', '.odt', '.ods', '.odp',
