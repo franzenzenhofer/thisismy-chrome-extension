@@ -75,13 +75,65 @@ export const updateSelectionDisplay = () => {
     textTd.title = titleText;
     tr.appendChild(textTd);
 
-    // Delete button cell
-    const deleteTd = document.createElement('td');
-    deleteTd.classList.add('delete-cell');
+    // Replace the delete button cell with actions cell
+    const actionsTd = document.createElement('td');
+    actionsTd.classList.add('action-cell');
 
+    // Copy button
+    const copyBtn = document.createElement('button');
+    copyBtn.innerHTML = '📋';
+    copyBtn.title = 'Copy';
+    copyBtn.classList.add('action-btn');
+    copyBtn.draggable = false;
+    copyBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const content = outputContents.get(key);
+      if (content) {
+        navigator.clipboard.writeText(content).then(
+          () => {
+            showNotification('Content copied to clipboard!', 'success');
+            copyBtn.innerHTML = '✓';
+            setTimeout(() => copyBtn.innerHTML = '📋', 1000);
+          },
+          () => showNotification('Failed to copy content.', 'error')
+        );
+      }
+    });
+
+    // Download button
+    const downloadBtn = document.createElement('button');
+    downloadBtn.innerHTML = '⬇️';
+    downloadBtn.title = 'Download';
+    downloadBtn.classList.add('action-btn');
+    downloadBtn.draggable = false;
+    downloadBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const content = outputContents.get(key);
+      if (content) {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        let filename = '';
+        if (selectedFiles.has(key)) {
+          filename = selectedFiles.get(key).name;
+        } else if (selectedURLs.has(key)) {
+          filename = new URL(selectedURLs.get(key)).hostname + '.txt';
+        } else {
+          filename = `content-${Date.now()}.txt`;
+        }
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        showNotification(`Downloaded: ${filename}`, 'success');
+      }
+    });
+
+    // Delete button
     const deleteBtn = document.createElement('button');
     deleteBtn.innerHTML = '🗑️';
-    deleteBtn.classList.add('delete-btn');
+    deleteBtn.title = 'Delete';
+    deleteBtn.classList.add('action-btn');
     deleteBtn.draggable = false;
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -101,8 +153,11 @@ export const updateSelectionDisplay = () => {
       showNotification(`Item removed.`, 'info');
       addLogEntry(`Item removed: ${key}`, 'info');
     });
-    deleteTd.appendChild(deleteBtn);
-    tr.appendChild(deleteTd);
+
+    actionsTd.appendChild(copyBtn);
+    actionsTd.appendChild(downloadBtn);
+    actionsTd.appendChild(deleteBtn);
+    tr.appendChild(actionsTd);
 
     // Add drag and drop event listeners to the 'tr'
     tr.addEventListener('dragstart', handleDragStart);
@@ -118,13 +173,25 @@ export const updateSelectionDisplay = () => {
   // If more than one item, add 'Remove All' button
   if (selectionOrder.length > 1) {
     const tr = document.createElement('tr');
-    const td = document.createElement('td');
-    td.colSpan = 3;
-    td.classList.add('remove-all-cell');
+    
+    // Add empty icon cell
+    const emptyIconTd = document.createElement('td');
+    emptyIconTd.classList.add('icon-cell');
+    tr.appendChild(emptyIconTd);
+    
+    // Add empty text cell
+    const emptyTextTd = document.createElement('td');
+    emptyTextTd.classList.add('text-cell');
+    tr.appendChild(emptyTextTd);
+    
+    // Add action cell with remove all button
+    const actionTd = document.createElement('td');
+    actionTd.classList.add('action-cell');
 
     const removeAllBtn = document.createElement('button');
-    removeAllBtn.textContent = 'Remove All';
-    removeAllBtn.classList.add('remove-all-btn', 'btn', 'waves-effect', 'waves-light');
+    removeAllBtn.innerHTML = '🗑️ all';
+    removeAllBtn.title = 'Remove All';
+    removeAllBtn.classList.add('action-btn', 'remove-all-btn');
     removeAllBtn.draggable = false;
     removeAllBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -139,8 +206,9 @@ export const updateSelectionDisplay = () => {
       showNotification('All items removed.', 'info');
       addLogEntry('All items removed.', 'info');
     });
-    td.appendChild(removeAllBtn);
-    tr.appendChild(td);
+    
+    actionTd.appendChild(removeAllBtn);
+    tr.appendChild(actionTd);
     table.appendChild(tr);
   }
 
