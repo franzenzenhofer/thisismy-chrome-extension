@@ -7,6 +7,7 @@ import {
   selectedSpecials,
   outputContents,
   selectionOrder,
+  dragSrcEl
 } from './state.js';
 import { selectionDisplay } from './uiElements.js';
 import { getFileIcon } from './utils.js';
@@ -18,7 +19,8 @@ import { addFile, addURL } from './main.js';
 import { traverseFileTree } from './fileHandler.js';
 import { handleDrop as handleGlobalDrop } from './uiHandlers.js';
 
-let dragSrcEl = null;
+// Remove the local declaration of dragSrcEl
+// let dragSrcEl = null;
 let dropzoneHoverTimeout = null;
 
 export const updateSelectionDisplay = () => {

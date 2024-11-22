@@ -7,3 +7,5 @@ export const selectedNotes = new Map();
 export const selectedSpecials = new Map();
 export const outputContents = new Map();
 export const selectionOrder = [];
+
+export let dragSrcEl = null;

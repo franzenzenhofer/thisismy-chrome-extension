@@ -89,63 +89,85 @@ const unsupportedFileExtensions = [
   '.rtf', '.odt', '.ods', '.odp',
 ];
 
-// Function to parse .gitignore or .thisismyignore content into patterns
+// utils.js
+
 export const parseIgnoreFile = (content) => {
   const lines = content.split('\n');
   const patterns = [];
+  
   for (let line of lines) {
+    // Remove whitespace
     line = line.trim();
-    if (line === '' || line.startsWith('#')) {
+    
+    // Skip empty lines and comments
+    if (!line || line.startsWith('#')) {
       continue;
     }
+    
+    // Normalize directory separators
+    line = line.replace(/\\/g, '/');
+    
+    // Remove trailing slashes
+    line = line.replace(/\/+$/, '');
+    
+    // Handle negation
+    if (line.startsWith('!')) {
+      // Negation patterns are not supported yet
+      continue;
+    }
+    
     patterns.push(line);
   }
+  
   return patterns;
 };
 
-// Function to convert gitignore pattern to RegExp
 const gitignorePatternToRegExp = (pattern) => {
-  // Escape regex special characters except for *, ?, and /.
-  let escaped = pattern.replace(/([.+^=!:${}()|[\]\\])/g, '\\$1');
-
-  // Handle '**' (matches any number of characters, including '/')
-  escaped = escaped.replace(/\\\*\\\*/g, '.*');
-
-  // Handle '*' (matches any number of characters except '/')
-  escaped = escaped.replace(/\\\*/g, '[^/]*');
-
-  // Handle '?' (matches any single character except '/')
-  escaped = escaped.replace(/\\\?/g, '[^/]');
-
-  // Now, construct the regex
-  let regexString = '';
-
+  // Escape special regex characters except *, ?, [, ], and /
+  let escaped = pattern.replace(/[.+^${}()|\\]/g, '\\$&');
+  
+  // Handle special folder pattern for both root and nested folders
   if (pattern.startsWith('/')) {
-    // For patterns starting with '/', match the pattern as a path segment anywhere in the path
-    regexString = '.*' + escaped + '(/|$)';
-  } else {
-    if (pattern.endsWith('/')) 
-    {
-      regexString = '(^|/)' + escaped + '.*';
-    }
-    else
-    {
-      // For other patterns, match as a path segment anywhere in the path
-      regexString = '(^|/)' + escaped + '(/|$)';
-    }
+    escaped = escaped.substring(1); // Remove leading slash
   }
-
+  
+  // Convert gitignore pattern tokens to regex
+  escaped = escaped
+    // Handle '**' (matches zero or more directories)
+    .replace(/\*\*/g, '.*')
+    // Handle '*' (matches anything except /)
+    .replace(/\*/g, '[^/]*')
+    // Handle '?' (matches any single character except /)
+    .replace(/\?/g, '[^/]')
+    // Handle [...]
+    .replace(/\[([^\]]+)\]/g, '[$1]');
+    
+  // Build final regex pattern
+  let regexString;
+  if (pattern.includes('/')) {
+    // If pattern contains /, match exactly
+    regexString = `^(.*/${escaped}.*|${escaped}.*)$`;
+  } else {
+    // If pattern is simple filename, match anywhere in path
+    regexString = `(^|/)(${escaped})($|/.*)`;
+  }
+  
   return new RegExp(regexString);
 };
 
-// Function to check if a file or directory path matches any ignore patterns
 export const matchIgnore = (filePath, patterns) => {
-  for (let pattern of patterns) {
+  // Normalize path separators
+  filePath = filePath.replace(/\\/g, '/');
+  // Remove leading slash
+  filePath = filePath.replace(/^\//, '');
+  
+  for (const pattern of patterns) {
     const regex = gitignorePatternToRegExp(pattern);
     if (regex.test(filePath)) {
       return true;
     }
   }
+  
   return false;
 };
 

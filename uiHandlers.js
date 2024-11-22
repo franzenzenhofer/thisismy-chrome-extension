@@ -27,6 +27,7 @@ import {
   selectedSpecials,
   outputContents,
   selectionOrder,
+  dragSrcEl,
 } from './state.js';
 import { updateOutputArea, addFile, addURL, addNote } from './main.js';
 import { importBriefing, exportBriefing } from './importexport.js';
