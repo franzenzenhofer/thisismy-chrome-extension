@@ -13,13 +13,59 @@ import { getFileIcon } from './utils.js';
 import { showNotification } from './notifications.js';
 import { addLogEntry } from './logger.js';
 import { updateOutputArea } from './main.js';
+import { isValidURL } from './utils.js';
+import { addFile, addURL } from './main.js';
+import { traverseFileTree } from './fileHandler.js';
+import { handleDrop as handleGlobalDrop } from './uiHandlers.js';
+
+let dragSrcEl = null;
+let dropzoneHoverTimeout = null;
 
 export const updateSelectionDisplay = () => {
   selectionDisplay.innerHTML = '';
 
-  // Create table element
+  // Create table element with drag-and-drop handlers
   const table = document.createElement('table');
   table.classList.add('selection-table');
+  
+  // Simple table-level handlers for external drops
+  table.addEventListener('dragenter', (e) => {
+    e.preventDefault();
+    if (!dragSrcEl) {
+      dropzone.classList.add('dragover');
+    }
+  });
+  
+  table.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = dragSrcEl ? 'move' : 'copy';
+    if (!dragSrcEl) {
+      // Reset hover state after a delay
+      clearTimeout(dropzoneHoverTimeout);
+      dropzoneHoverTimeout = setTimeout(() => {
+        dropzone.classList.remove('dragover');
+      }, 2000); // Adjust delay as needed
+    }
+  });
+  
+  table.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    if (!dragSrcEl && !e.currentTarget.contains(e.relatedTarget)) {
+      dropzone.classList.remove('dragover');
+    }
+  });
+  
+  table.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzone.classList.remove('dragover');
+    
+    if (!dragSrcEl) {
+      // Handle external drops like the main dropzone
+      addLogEntry('External drop detected in selection list', 'info');
+      handleGlobalDrop(e);
+    }
+  });
 
   // For each selection item
   selectionOrder.forEach((key) => {
@@ -216,7 +262,6 @@ export const updateSelectionDisplay = () => {
 };
 
 // Drag and Drop Handlers
-let dragSrcEl = null;
 
 function handleDragStart(e) {
   dragSrcEl = this;
@@ -228,33 +273,33 @@ function handleDragStart(e) {
 }
 
 function handleDragOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  return false;
+  if (dragSrcEl) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }
 }
 
 function handleDragEnter(e) {
-  e.preventDefault();
-  const target = e.currentTarget;
-  if (target !== dragSrcEl) {
-    target.classList.add('over');
+  if (dragSrcEl) {
+    e.preventDefault();
+    e.currentTarget.classList.add('over');
   }
 }
 
 function handleDragLeave(e) {
-  e.preventDefault();
-  const target = e.currentTarget;
-  if (target !== dragSrcEl) {
-    if (!target.contains(e.relatedTarget)) {
-      target.classList.remove('over');
+  if (dragSrcEl) {
+    e.preventDefault();
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      e.currentTarget.classList.remove('over');
     }
   }
 }
 
 function handleDrop(e) {
-  e.stopPropagation();
-  e.preventDefault();
-  if (dragSrcEl !== this) {
+  if (dragSrcEl && dragSrcEl.dataset && dragSrcEl !== this) {
+    e.stopPropagation();
+    e.preventDefault();
+
     const srcKey = dragSrcEl.dataset.key;
     const targetKey = this.dataset.key;
 
@@ -278,6 +323,8 @@ function handleDragEnd(e) {
   items.forEach((item) => {
     item.classList.remove('over');
   });
+
+  dragSrcEl = null; // Reset dragSrcEl after drag operation
 }
 
 // Add event listeners to the selection display container

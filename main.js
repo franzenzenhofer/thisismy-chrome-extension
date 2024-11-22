@@ -35,7 +35,12 @@ import { isUnsupportedFile } from './utils.js';
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'libs/pdf.worker.js';
 initializeEventListeners();
 
-export const addFile = (file) => {
+export const addFile = async (file, insertIndex = undefined) => {
+  if (typeof insertIndex === 'number') {
+    addLogEntry(`Adding file at index ${insertIndex}: ${file.name}`, 'info');
+  } else {
+    addLogEntry(`Adding file: ${file.name}`, 'info');
+  }
   if (!file.filePath) {
     file.filePath = file.webkitRelativePath || file.name;
   }
@@ -46,20 +51,28 @@ export const addFile = (file) => {
   }
   showNotification(`Processing file: ${file.name}`, 'info');
   addLogEntry(`Processing file: ${file.filePath}`, 'info');
-  processFile(file);
+  if (typeof insertIndex === 'number') {
+    addLogEntry(`Using specified insert index: ${insertIndex}`, 'info');
+  }
+  await processFile(file, insertIndex);
 };
 
-export const addURL = (url) => {
+export const addURL = async (url, insertIndex = undefined) => {
+  if (typeof insertIndex === 'number') {
+    addLogEntry(`Adding URL at index ${insertIndex}: ${url}`, 'info');
+  } else {
+    addLogEntry(`Adding URL: ${url}`, 'info');
+  }
   if (url.trim().endsWith('.thisismy.json')) {
     importBriefingFromURL(url);
   } else {
     showNotification(`Processing URL: ${url}`, 'info');
     addLogEntry(`Processing URL: ${url}`, 'info');
-    processURL(url);
+    processURL(url, insertIndex);
   }
 };
 
-const processURL = async (url) => {
+const processURL = async (url, insertIndex = undefined) => {
   const urlKey = `url:${Date.now()}`; // Use timestamp as key to ensure uniqueness
   processingIndicator.textContent = `Processing URL "${url}"...`;
   processingIndicator.style.display = 'block';
@@ -68,7 +81,11 @@ const processURL = async (url) => {
     if (content !== null) {
       outputContents.set(urlKey, content);
       selectedURLs.set(urlKey, url);
-      selectionOrder.push(urlKey);
+      if (typeof insertIndex === 'number') {
+        selectionOrder.splice(insertIndex, 0, urlKey);
+      } else {
+        selectionOrder.push(urlKey);
+      }
       updateSelectionDisplay();
       updateOutputArea();
       showNotification(`Processed URL: ${url}`, 'success');
@@ -102,7 +119,7 @@ const processNote = (note) => {
   updateOutputArea();
 };
 
-const processFile = async (file) => {
+const processFile = async (file, insertIndex = undefined) => {
   processingIndicator.textContent = `Processing "${file.name}"...`;
   processingIndicator.style.display = 'block';
   try {
@@ -120,7 +137,11 @@ const processFile = async (file) => {
           filePath: file.filePath,
           type: file.type,
         });
-        selectionOrder.push(file.filePath);
+        if (typeof insertIndex === 'number') {
+          selectionOrder.splice(insertIndex, 0, file.filePath);
+        } else {
+          selectionOrder.push(file.filePath);
+        }
         updateSelectionDisplay();
         updateOutputArea();
         showNotification(`Processed file: ${file.name}`, 'success');
@@ -172,7 +193,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const title = `Selected content from ${url}`;
     const key = `selection:${Date.now()}`;
     outputContents.set(key, content);
-    selectedSpecials.set(key, { name: title, icon: '✂️' });
+    selectedSpecials.set(key, { name: title, icon: '✂��' });
     selectionOrder.push(key);
     updateSelectionDisplay();
     updateOutputArea();

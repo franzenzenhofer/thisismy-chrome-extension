@@ -31,6 +31,40 @@ import {
 import { updateOutputArea, addFile, addURL, addNote } from './main.js';
 import { importBriefing, exportBriefing } from './importexport.js';
 import { updateSelectionDisplay } from './selectionlist.js';
+import { traverseFileTree } from './fileHandler.js';
+
+// Export handleDrop for reuse
+export const handleDrop = (event) => {
+  addLogEntry('Processing dropped items', 'info');
+  const items = event.dataTransfer.items;
+  
+  for (let item of items) {
+    try {
+      if (item.kind === 'string' && item.type === 'text/uri-list') {
+        item.getAsString((url) => {
+          if (isValidURL(url)) {
+            addURL(url);
+            addLogEntry(`Processing dropped URL: ${url}`, 'info');
+          } else {
+            addLogEntry(`Invalid URL dropped: ${url}`, 'warning');
+            showNotification('Invalid URL dropped.', 'error');
+          }
+        });
+      } else if (item.kind === 'file') {
+        const entry = item.webkitGetAsEntry();
+        if (entry) {
+          addLogEntry(`Processing dropped file/directory: ${entry.name}`, 'info');
+          traverseFileTree(entry);
+        }
+      }
+    } catch (error) {
+      addLogEntry(`Error processing dropped item: ${error.message}`, 'error');
+      showNotification('Error processing dropped item.', 'error');
+    }
+  }
+};
+
+let dropzoneHoverTimeout = null;
 
 export const initializeEventListeners = () => {
   // Event Listeners
@@ -38,15 +72,30 @@ export const initializeEventListeners = () => {
   dropTargets.forEach((element) => {
     element.addEventListener('dragover', (e) => {
       e.preventDefault();
-      dropzone.classList.add('dragover');
+      if (!dragSrcEl) {
+        e.dataTransfer.dropEffect = 'copy';
+        dropzone.classList.add('dragover');
+
+        // Reset hover state after a delay
+        clearTimeout(dropzoneHoverTimeout);
+        dropzoneHoverTimeout = setTimeout(() => {
+          dropzone.classList.remove('dragover');
+        }, 2000); // Adjust delay as needed
+      }
     });
+
     element.addEventListener('dragleave', () => {
-      dropzone.classList.remove('dragover');
+      if (!dragSrcEl) {
+        dropzone.classList.remove('dragover');
+      }
     });
+
     element.addEventListener('drop', (e) => {
       e.preventDefault();
-      dropzone.classList.remove('dragover');
-      handleDrop(e);
+      if (!dragSrcEl) {
+        dropzone.classList.remove('dragover');
+        handleDrop(e);
+      }
     });
   });
 
@@ -192,116 +241,6 @@ export const initializeEventListeners = () => {
     console.log('Get Selected Content button clicked.');
     addLogEntry('Get Selected Content button clicked.', 'info');
     getSelectedContent();
-  });
-};
-
-const handleDrop = (event) => {
-  const items = event.dataTransfer.items;
-  for (let item of items) {
-    if (item.kind === 'string' && item.type === 'text/uri-list') {
-      item.getAsString((url) => {
-        if (isValidURL(url)) {
-          addURL(url);
-        } else {
-          showNotification('Invalid URL dropped.', 'error');
-        }
-      });
-    } else if (item.kind === 'file') {
-      const entry = item.webkitGetAsEntry();
-      if (entry) {
-        traverseFileTree(entry);
-      }
-    }
-  }
-};
-
-const traverseFileTree = async (entry, path = '', ignorePatterns = []) => {
-  if (entry.isFile) {
-    entry.file((file) => {
-      file.filePath = '/' + path + file.name;
-      if (!matchIgnore(file.filePath, ignorePatterns)) {
-        addFile(file);
-      } else {
-        addLogEntry(`Ignored file: ${file.filePath}`, 'info');
-      }
-    });
-  } else if (entry.isDirectory) {
-    const dirReader = entry.createReader();
-    const entries = await readAllEntries(dirReader);
-
-    // Initialize ignore patterns for this directory
-    let currentIgnorePatterns = [...ignorePatterns]; // Copy existing patterns
-
-    // Look for .thisismyignore or .gitignore
-    const ignoreFileEntry = entries.find((e) => e.name === '.thisismyignore' || e.name === '.gitignore');
-
-    if (ignoreFileEntry) {
-      const newPatterns = await readIgnoreFile(ignoreFileEntry);
-      if (ignoreFileEntry.name === '.thisismyignore') {
-        currentIgnorePatterns = newPatterns; // Override existing patterns
-        addLogEntry(`Parsed .thisismyignore in ${'/' + path + entry.name}`, 'info');
-      } else if (ignoreFileEntry.name === '.gitignore') {
-        // Only use .gitignore if .thisismyignore is not present
-        if (!entries.some((e) => e.name === '.thisismyignore')) {
-          currentIgnorePatterns = currentIgnorePatterns.concat(newPatterns); // Append patterns
-          addLogEntry(`Parsed .gitignore in ${'/' + path + entry.name}`, 'info');
-        }
-      }
-    }
-
-    for (let childEntry of entries) {
-      if (childEntry.name.startsWith('.')) {
-        continue; // Ignore dotfiles
-      }
-      const childPath = path + entry.name + '/';
-      const relativePath = '/' + childPath + childEntry.name;
-
-      // Check if the child entry should be ignored
-      if (matchIgnore(relativePath, currentIgnorePatterns)) {
-        if (childEntry.isDirectory) {
-          addLogEntry(`Ignored directory: ${relativePath}`, 'info');
-        } else {
-          addLogEntry(`Ignored file: ${relativePath}`, 'info');
-        }
-        continue; // Skip ignored files/directories
-      }
-
-      await traverseFileTree(childEntry, childPath, currentIgnorePatterns);
-    }
-  }
-};
-
-const readAllEntries = (dirReader) => {
-  return new Promise((resolve) => {
-    let entries = [];
-    const readEntries = () => {
-      dirReader.readEntries((results) => {
-        if (!results.length) {
-          resolve(entries);
-        } else {
-          entries = entries.concat(Array.from(results));
-          readEntries();
-        }
-      });
-    };
-    readEntries();
-  });
-};
-
-const readIgnoreFile = (entry) => {
-  return new Promise((resolve) => {
-    entry.file((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target.result;
-        const patterns = parseIgnoreFile(content);
-        resolve(patterns);
-      };
-      reader.onerror = () => {
-        resolve([]);
-      };
-      reader.readAsText(file);
-    });
   });
 };
 

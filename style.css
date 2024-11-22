@@ -109,6 +109,8 @@ body {
   width: 100%;
   border-collapse: collapse;
   padding: -24px;
+  position: relative;
+  min-height: 30px; /* Ensures empty table is droppable */
 }
 
 .selection-table td {
@@ -137,6 +139,22 @@ body {
 .selection-table tr.selection-item.over {
   background-color: #e0f7fa;
   border: 2px dashed #2196F3;
+}
+
+.selection-table tr.over {
+  border-bottom: 2px solid #2196F3;
+  background-color: rgba(33, 150, 243, 0.1);
+  position: relative;
+}
+
+.selection-table tr.over::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 2px;
+  background-color: #2196F3;
 }
 
 .selection-table .icon-cell {
